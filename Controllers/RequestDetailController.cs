@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Asisia.webapi.Repositories;
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public sealed class RequestDetailController : BaseController<REQUEST_DETAIL, IGenericRepository<REQUEST_DETAIL>>
+public sealed class RequestDetailController : BaseController<RequestDetail, IGenericRepository<RequestDetail>>
 { 
-    public RequestDetailController(ILogger<REQUEST_DETAIL> logger, Models.DBContext context, 
-        IGenericRepository<REQUEST_DETAIL> repository) : base(logger, context, repository)
+    public RequestDetailController(ILogger<RequestDetail> logger, Models.DBContext context, 
+        IGenericRepository<RequestDetail> repository) : base(logger, context, repository)
     {
         
     }     

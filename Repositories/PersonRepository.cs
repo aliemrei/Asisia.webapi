@@ -1,8 +1,8 @@
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Repositories
 {
-    public sealed class PersonRepository : RepositoryBase<PERSON>
+    public sealed class PersonRepository : RepositoryBase<Person>
     {
         
     }

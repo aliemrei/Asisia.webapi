@@ -1,7 +1,7 @@
 using System.Reflection;
 using Asisia.webapi.Controllers;
 using Asisia.webapi.Models;
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
  
@@ -16,12 +16,12 @@ public static class EdmModelBuilder
     {
         var builder = new ODataConventionModelBuilder();
 
-        builder.EntitySet<REQUEST>("Request");
-        builder.EntitySet<PERSON>("Person");
-        builder.EntitySet<REQUEST_DETAIL>("RequestDetail");
-        builder.EntitySet<REQUEST_CLIENTS>("RequestClient");
-        builder.EntitySet<PROJECT_GROUP>("ProjectGroup");
-        builder.EntitySet<PROJECT_GROUPDETAIL>("ProjectGroupDetail");
+        builder.EntitySet<Request>("Request");
+        builder.EntitySet<Person>("Person");
+        builder.EntitySet<RequestDetail>("RequestDetail");
+        builder.EntitySet<RequestClients>("RequestClient");
+        builder.EntitySet<ProjectGroup>("ProjectGroup");
+        builder.EntitySet<ProjectGroupdetail>("ProjectGroupDetail");
 
 
         return builder.GetEdmModel();

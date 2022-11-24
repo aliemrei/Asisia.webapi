@@ -7,7 +7,7 @@ using Microsoft.OData.Edm;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
 using Newtonsoft.Json;
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,12 +19,12 @@ builder.Services.AddDbContext<Asisia.webapi.Models.DBContext>(options =>
 
 });
 
-builder.Services.AddSingleton<IGenericRepository<REQUEST>, RequestRepository>();
-builder.Services.AddSingleton<IGenericRepository<PERSON>, PersonRepository>();
-builder.Services.AddSingleton<IGenericRepository<REQUEST_DETAIL>, RequestDetailRepository>();
-builder.Services.AddSingleton<IGenericRepository<REQUEST_CLIENTS>, RequestClientRepository>();
-builder.Services.AddSingleton<IGenericRepository<PROJECT_GROUP>, ProjectGroupRepository>();
-builder.Services.AddSingleton<IGenericRepository<PROJECT_GROUPDETAIL>, ProjectGroupDetailRepository>();
+builder.Services.AddSingleton<IGenericRepository<Request>, RequestRepository>();
+builder.Services.AddSingleton<IGenericRepository<Person>, PersonRepository>();
+builder.Services.AddSingleton<IGenericRepository<RequestDetail>, RequestDetailRepository>();
+builder.Services.AddSingleton<IGenericRepository<RequestClients>, RequestClientRepository>();
+builder.Services.AddSingleton<IGenericRepository<ProjectGroup>, ProjectGroupRepository>();
+builder.Services.AddSingleton<IGenericRepository<ProjectGroupdetail>, ProjectGroupDetailRepository>();
 
 
 IEdmModel modelv1 = EdmModelBuilder.GetEdmModelV1();
@@ -35,6 +35,7 @@ builder.Services.AddControllers(options => options.SuppressImplicitRequiredAttri
         //.AddRouteComponents("v1", model1)
         //.AddRouteComponents("v2{data}", model2, services => services.AddSingleton<ODataBatchHandler, DefaultODataBatchHandler>())
         .AddRouteComponents("odata", modelv1)
+         
         //.Conventions.Add(new MyConvention())
     );
 
@@ -91,5 +92,5 @@ app.Run();
 
 
 /*
-dotnet ef dbcontext scaffold "Data Source=192.168.1.121;initial catalog=ASISIA_DEMO;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi" Microsoft.EntityFrameworkCore.SqlServer -o Models/Db -c DBContext -d -f --use-database-names --no-pluralize
+dotnet ef dbcontext scaffold "Data Source=192.168.1.121;initial catalog=ASISIA_DEMO;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi" Microsoft.EntityFrameworkCore.SqlServer -o Models/Db -c DBContext -d -f  --no-pluralize
 */

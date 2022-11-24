@@ -1,10 +1,10 @@
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Repositories
 {
-    public sealed class RequestRepository : RepositoryBase<REQUEST>
+    public sealed class RequestRepository : RepositoryBase<Request>
     {
-        public override IQueryable<REQUEST> GetAll()
+        public override IQueryable<Request> GetAll()
         {
             var result = base.GetAll();
 

@@ -270,3 +270,8 @@
 /Users/emreilhan/Documents/Source/Asisia.webapi/bin/Debug/net6.0/EntityFrameworkCore.Scaffolding.Handlebars.dll
 /Users/emreilhan/Documents/Source/Asisia.webapi/bin/Debug/net6.0/Handlebars.dll
 /Users/emreilhan/Documents/Source/Asisia.webapi/bin/Debug/net6.0/JetBrains.Annotations.dll
+/Users/emreilhan/Documents/Source/Asisia.webapi/obj/Debug/net6.0/staticwebassets/msbuild.Asisia.webapi.Microsoft.AspNetCore.StaticWebAssets.props
+/Users/emreilhan/Documents/Source/Asisia.webapi/obj/Debug/net6.0/staticwebassets/msbuild.build.Asisia.webapi.props
+/Users/emreilhan/Documents/Source/Asisia.webapi/obj/Debug/net6.0/staticwebassets/msbuild.buildMultiTargeting.Asisia.webapi.props
+/Users/emreilhan/Documents/Source/Asisia.webapi/obj/Debug/net6.0/staticwebassets/msbuild.buildTransitive.Asisia.webapi.props
+/Users/emreilhan/Documents/Source/Asisia.webapi/obj/Debug/net6.0/staticwebassets.pack.json

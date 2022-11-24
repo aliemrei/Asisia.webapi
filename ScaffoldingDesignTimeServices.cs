@@ -28,7 +28,7 @@ namespace Asisia.webapi
                 options.ReverseEngineerOptions = ReverseEngineerOptions.DbContextAndEntities;
 
                 // Put Models into folders by DB Schema
-                options.EnableSchemaFolders = true;
+                options.EnableSchemaFolders = false;
 
                 // Exclude some tables
                 //options.ExcludedTables = new List<string> { "dbo.Territory" };
@@ -55,11 +55,13 @@ namespace Asisia.webapi
             services.AddHandlebarsBlockHelpers(ifCondHelper);
 
             // Add Handlebars transformer for Country property
+            /*
             services.AddHandlebarsTransformers(
                 propertyTransformer: p =>
                     p.PropertyName == "Country"
                         ? new EntityPropertyInfo("Country?", p.PropertyName, false)
                         : new EntityPropertyInfo(p.PropertyType, p.PropertyName, p.PropertyIsNullable));
+            */
 
             // Add Handlebars transformer for Id property
             //services.AddHandlebarsTransformers2(

@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Asisia.webapi.Repositories;
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public sealed class ProjectGroupDetailController : BaseController<PROJECT_GROUPDETAIL, IGenericRepository<PROJECT_GROUPDETAIL>>
+public sealed class ProjectGroupDetailController : BaseController<ProjectGroupdetail, IGenericRepository<ProjectGroupdetail>>
 { 
-    public ProjectGroupDetailController(ILogger<PROJECT_GROUPDETAIL> logger, Models.DBContext context, 
-        IGenericRepository<PROJECT_GROUPDETAIL> repository) : base(logger, context, repository)
+    public ProjectGroupDetailController(ILogger<ProjectGroupdetail> logger, Models.DBContext context, 
+        IGenericRepository<ProjectGroupdetail> repository) : base(logger, context, repository)
     {
         
     }     

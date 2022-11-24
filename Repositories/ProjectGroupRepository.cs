@@ -1,8 +1,8 @@
-using Asisia.webapi.Models.dbo;
+using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Repositories
 {
-    public sealed class ProjectGroupRepository : RepositoryBase<PROJECT_GROUP>
+    public sealed class ProjectGroupRepository : RepositoryBase<ProjectGroup>
     {
         
     }
