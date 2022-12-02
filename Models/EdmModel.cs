@@ -22,9 +22,35 @@ public static class EdmModelBuilder
         builder.EntitySet<RequestClients>("RequestClient");
         builder.EntitySet<ProjectGroup>("ProjectGroup");
         builder.EntitySet<ProjectGroupdetail>("ProjectGroupDetail");
+        builder.EntitySet<Country>("Countries");
+        builder.EntitySet<Resources>("Resources");
+        builder.EntitySet<Curcode>("Currencies");
+
+        builder.EntityType<ProjectGroup>().Collection
+                .Function("GetRequestProjectGroups")
+                .ReturnsCollectionFromEntitySet<ProjectGroup>("ProjectGroup");
+
+        builder.EntitySet<ProjectGroupdetail>("ProjectGroupDetail");
+
+        builder.EntityType<ProjectGroupdetail>().Collection
+            .Function("GetRequestProjectGroupDetails")
+            .ReturnsCollectionFromEntitySet<ProjectGroupdetail>("ProjectGroupDetail")
+            .Parameter<Guid>("ProjectId");
+
+        builder.EntityType<Request>().Collection
+                .Function("AddNew")
+                .ReturnsCollectionFromEntitySet<Request>("Request");
+
+        builder.EntityType<Country>().Collection
+               .Function("AddNew")
+               .ReturnsCollectionFromEntitySet<Country>("Countries");
 
 
-        return builder.GetEdmModel();
+        EdmEntityContainer container = new EdmEntityContainer(builder.Namespace, builder.ContainerName);
+
+        EdmModel model = (EdmModel)builder.GetEdmModel();
+
+        return model;
 
     }
 }

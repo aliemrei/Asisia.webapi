@@ -2,6 +2,12 @@
         {
         }
 
-        public {{class}}(DbContextOptions<{{class}}> options) : base(options)
+        public {{class}}(DbContextOptions<{{class}}> options,
+            IHttpContextAccessor contextAccessor) : base(options)
         {
+            _contextAccessor = contextAccessor;
+            if (Guid.TryParse(contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "corpId")?.Value, out var corpId))
+            {
+                _tenant = corpId;  
+            }
         }

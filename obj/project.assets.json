@@ -46,13 +46,13 @@
           }
         }
       },
-      "EntityFrameworkCore.Scaffolding.Handlebars/6.0.3": {
+      "EntityFrameworkCore.Scaffolding.Handlebars/7.0.0-beta1": {
         "type": "package",
         "dependencies": {
-          "Handlebars.Net": "2.0.10",
-          "JetBrains.Annotations": "2021.3.0",
-          "Microsoft.EntityFrameworkCore.Abstractions": "6.0.0",
-          "Microsoft.EntityFrameworkCore.Design": "6.0.0"
+          "Handlebars.Net": "2.1.2",
+          "JetBrains.Annotations": "2022.3.1",
+          "Microsoft.EntityFrameworkCore.Abstractions": "7.0.0",
+          "Microsoft.EntityFrameworkCore.Design": "7.0.0"
         },
         "compile": {
           "lib/net6.0/EntityFrameworkCore.Scaffolding.Handlebars.dll": {
@@ -68,7 +68,7 @@
           "build/EntityFrameworkCore.Scaffolding.Handlebars.targets": {}
         }
       },
-      "Handlebars.Net/2.0.10": {
+      "Handlebars.Net/2.1.2": {
         "type": "package",
         "dependencies": {
           "Microsoft.CSharp": "4.7.0"
@@ -97,7 +97,7 @@
           }
         }
       },
-      "JetBrains.Annotations/2021.3.0": {
+      "JetBrains.Annotations/2022.3.1": {
         "type": "package",
         "compile": {
           "lib/netstandard2.0/JetBrains.Annotations.dll": {
@@ -147,6 +147,25 @@
       },
       "MessagePackAnalyzer/2.1.152": {
         "type": "package"
+      },
+      "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.0": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.IdentityModel.Protocols.OpenIdConnect": "6.15.1"
+        },
+        "compile": {
+          "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll": {
+            "related": ".xml"
+          }
+        },
+        "runtime": {
+          "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll": {
+            "related": ".xml"
+          }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       },
       "Microsoft.AspNetCore.OData/8.0.11": {
         "type": "package",
@@ -3964,15 +3983,15 @@
         "lib/netstandard2.0/Azure.Identity.xml"
       ]
     },
-    "EntityFrameworkCore.Scaffolding.Handlebars/6.0.3": {
-      "sha512": "giyYtPKzKk3I3T6HOArlcXfI1FKSyVh5HUxF/pBtUayZAEkkabImDZMfvZEfJaqKcjSse/qXYnHiuGRxlify6g==",
+    "EntityFrameworkCore.Scaffolding.Handlebars/7.0.0-beta1": {
+      "sha512": "OgoDpDNTpNSp8bl7bGL+HNzO9gi5wDcEuabMatBKkbaiySyLWmuajbv3rwPlT8xCI2EYl5KzTuqGTILWVh+WGw==",
       "type": "package",
-      "path": "entityframeworkcore.scaffolding.handlebars/6.0.3",
+      "path": "entityframeworkcore.scaffolding.handlebars/7.0.0-beta1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "build/EntityFrameworkCore.Scaffolding.Handlebars.targets",
-        "entityframeworkcore.scaffolding.handlebars.6.0.3.nupkg.sha512",
+        "entityframeworkcore.scaffolding.handlebars.7.0.0-beta1.nupkg.sha512",
         "entityframeworkcore.scaffolding.handlebars.nuspec",
         "icon.png",
         "lib/net6.0/CodeTemplates/CSharpDbContext/DbContext.hbs",
@@ -3998,15 +4017,15 @@
         "lib/net6.0/EntityFrameworkCore.Scaffolding.Handlebars.xml"
       ]
     },
-    "Handlebars.Net/2.0.10": {
-      "sha512": "8vGFIruGS2DuvL5vAU2/9joojHS/ZaMtyJQfdYIMAa+GxqbXG/IzFQsRKlhMCZplWMCrWuFbXUNhzjbPsGts/g==",
+    "Handlebars.Net/2.1.2": {
+      "sha512": "p60QyeBYpZmcZdIXRMqs9XySIBaxJ0lj3+QD0EJVr4ybTigOTCumXMMin5dPwjo9At1UwkDZ3gGwa1lmGjG6DA==",
       "type": "package",
-      "path": "handlebars.net/2.0.10",
+      "path": "handlebars.net/2.1.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "LICENSE",
-        "handlebars.net.2.0.10.nupkg.sha512",
+        "handlebars.net.2.1.2.nupkg.sha512",
         "handlebars.net.nuspec",
         "hbnet-icon.png",
         "lib/net451/Handlebars.dll",
@@ -4041,15 +4060,15 @@
         "logo.png"
       ]
     },
-    "JetBrains.Annotations/2021.3.0": {
-      "sha512": "Ddxjs5RRjf+c8m9m++WvhW1lz1bqNhsTjWvCLbQN9bvKbkJeR9MhtfNwKgBRRdG2yLHcXFr5Lf7fsvvkiPaDRg==",
+    "JetBrains.Annotations/2022.3.1": {
+      "sha512": "11nsS3+lFICGkztVs9PP2NRItxf9fF+qD6xEW/T0YGto52zj07wseUeBdMAU1ah9HNVTDZyRC1u4NWdtJScwhw==",
       "type": "package",
-      "path": "jetbrains.annotations/2021.3.0",
+      "path": "jetbrains.annotations/2022.3.1",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "icon.png",
-        "jetbrains.annotations.2021.3.0.nupkg.sha512",
+        "jetbrains.annotations.2022.3.1.nupkg.sha512",
         "jetbrains.annotations.nuspec",
         "lib/net20/JetBrains.Annotations.dll",
         "lib/net20/JetBrains.Annotations.xml",
@@ -4107,6 +4126,21 @@
         "messagepackanalyzer.nuspec",
         "tools/install.ps1",
         "tools/uninstall.ps1"
+      ]
+    },
+    "Microsoft.AspNetCore.Authentication.JwtBearer/7.0.0": {
+      "sha512": "q2suMVl1gO6rBJkV7rxm0F2sBufValm2RKxY3zoWN4y6cAufDJYmzpLWPKju3kKFJFKNgivWgoTw0dvf4W5QDQ==",
+      "type": "package",
+      "path": "microsoft.aspnetcore.authentication.jwtbearer/7.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.dll",
+        "lib/net7.0/Microsoft.AspNetCore.Authentication.JwtBearer.xml",
+        "microsoft.aspnetcore.authentication.jwtbearer.7.0.0.nupkg.sha512",
+        "microsoft.aspnetcore.authentication.jwtbearer.nuspec"
       ]
     },
     "Microsoft.AspNetCore.OData/8.0.11": {
@@ -11318,7 +11352,8 @@
   },
   "projectFileDependencyGroups": {
     "net7.0": [
-      "EntityFrameworkCore.Scaffolding.Handlebars >= 6.0.3",
+      "EntityFrameworkCore.Scaffolding.Handlebars >= 7.0.0-beta1",
+      "Microsoft.AspNetCore.Authentication.JwtBearer >= 7.0.0",
       "Microsoft.AspNetCore.OData >= 8.0.11",
       "Microsoft.EntityFrameworkCore.Design >= 7.0.0",
       "Microsoft.EntityFrameworkCore.SqlServer >= 7.0.0",
@@ -11366,7 +11401,11 @@
         "dependencies": {
           "EntityFrameworkCore.Scaffolding.Handlebars": {
             "target": "Package",
-            "version": "[6.0.3, )"
+            "version": "[7.0.0-beta1, )"
+          },
+          "Microsoft.AspNetCore.Authentication.JwtBearer": {
+            "target": "Package",
+            "version": "[7.0.0, )"
           },
           "Microsoft.AspNetCore.OData": {
             "target": "Package",

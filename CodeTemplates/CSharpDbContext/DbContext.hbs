@@ -4,6 +4,7 @@ namespace {{namespace}}
 { // Comment
     public partial class {{class}} : DbContext
     {
+        private readonly IHttpContextAccessor _contextAccessor;
 {{{> dbsets}}}
 {{#if entity-type-errors}}
 {{#each entity-type-errors}}

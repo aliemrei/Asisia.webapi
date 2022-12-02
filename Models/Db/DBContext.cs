@@ -7,6 +7,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     public partial class DBContext : DbContext
     {
+        private readonly IHttpContextAccessor _contextAccessor;
         // My Handlebars Helper
         public virtual DbSet<Agency> Agency { get; set; } = null!;
         // My Handlebars Helper
@@ -500,16 +501,26 @@ namespace Asisia.webapi.Models.Db
         {
         }
 
-        public DBContext(DbContextOptions<DBContext> options) : base(options)
+        public DBContext(DbContextOptions<DBContext> options,
+            IHttpContextAccessor contextAccessor) : base(options)
         {
+            _contextAccessor = contextAccessor;
+            
+            if (Guid.TryParse(contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "corpId")?.Value, out var corpId))
+            {
+                _tenant = corpId;  
+            }
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=192.168.1.121;initial catalog=ASISIA_DEMO;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi");
+                var builder = WebApplication.CreateBuilder();
+
+                optionsBuilder.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+                optionsBuilder.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
+
             }
         }
 
@@ -521,65 +532,17 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__AGENCY__3214EC26C02849A1")
                     .IsClustered(false);
 
-                entity.ToTable("AGENCY");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Fullname, e.Isdeleted }, "UQ__AGENCY__E0A4B5DC409567EB")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Authorizedid).HasColumnName("AUTHORIZEDID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.DefaultCurcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("DEFAULT_CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(250)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.PaymentRate)
-                    .HasColumnName("PAYMENT_RATE")
-                    .HasDefaultValueSql("((100))");
-
-                entity.Property(e => e.Quota).HasColumnName("QUOTA");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
+                entity.Property(e => e.PaymentRate).HasDefaultValueSql("((100))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.AgencyAdduserNavigation)
@@ -620,37 +583,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__AGENCY_G__3214EC26B8FF14FD")
                     .IsClustered(false);
 
-                entity.ToTable("AGENCY_GROUP");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Groupname }, "UQ__AGENCY_G__13040B821987821B")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Groupname)
-                    .HasMaxLength(200)
-                    .HasColumnName("GROUPNAME");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.AgencyGroupAdduserNavigation)
@@ -672,38 +607,17 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<AuditLogs>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("AuditLogs");
-
-                entity.Property(e => e.DatabaseName).HasMaxLength(200);
-
-                entity.Property(e => e.DateTime).HasColumnType("datetime");
 
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.PrimaryKey).HasMaxLength(200);
-
-                entity.Property(e => e.TableName).HasMaxLength(200);
-
                 entity.Property(e => e.Type)
-                    .HasMaxLength(16)
                     .IsUnicode(false)
                     .IsFixedLength();
             });
 
             modelBuilder.Entity<BasketData>(entity =>
             {
-                entity.ToTable("BASKET_DATA");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Data)
-                    .HasColumnType("ntext")
-                    .HasColumnName("DATA");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
                 entity.HasOne(d => d.Request)
                     .WithMany(p => p.BasketData)
                     .HasForeignKey(d => d.Requestid)
@@ -713,51 +627,14 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<BonusDef>(entity =>
             {
-                entity.ToTable("BONUS_DEF");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.ApplyType).HasColumnName("APPLY_TYPE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .HasDefaultValueSql("('TRY')")
                     .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.FirstDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("FIRST_DATE");
-
-                entity.Property(e => e.LastDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_DATE");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.BonusDefAdduserNavigation)
@@ -793,30 +670,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__BONUS_DE__3214EC265B6D78FC")
                     .IsClustered(false);
 
-                entity.ToTable("BONUS_DEF_ITEMS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.BonusDefid).HasColumnName("BONUS_DEFID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.Propertyid).HasColumnName("PROPERTYID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.BonusDefItemsAdduserNavigation)
@@ -835,32 +691,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__BONUS_DE__3214EC26EFA5C371")
                     .IsClustered(false);
 
-                entity.ToTable("BONUS_DEF_PRICES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.BonusDefItemsid).HasColumnName("BONUS_DEF_ITEMSID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.FirstAmount).HasColumnName("FIRST_AMOUNT");
-
-                entity.Property(e => e.LastAmount).HasColumnName("LAST_AMOUNT");
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.BonusDefPricesAdduserNavigation)
@@ -885,15 +718,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__BONUS_DE__3214EC26AC720DE4")
                     .IsClustered(false);
 
-                entity.ToTable("BONUS_DEF_USERS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.BonusDefid).HasColumnName("BONUS_DEFID");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.BonusDefUsers)
@@ -905,110 +730,20 @@ namespace Asisia.webapi.Models.Db
             {
                 entity.HasKey(e => e.Date)
                     .HasName("PK__CALENDAR__1F7C70C4BA479CA1");
-
-                entity.ToTable("CALENDAR");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Dayofweek).HasColumnName("DAYOFWEEK");
             });
 
             modelBuilder.Entity<CallJobs>(entity =>
             {
-                entity.ToTable("CALL_JOBS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Adddate, "IX_CALL_JOBS");
-
-                entity.HasIndex(e => new { e.Isdeleted, e.Isdisabled }, "IX_CALL_JOBS_1");
-
-                entity.HasIndex(e => new { e.Reason, e.Result }, "IX_CALL_JOBS_2");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Calldate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLDATE");
-
-                entity.Property(e => e.Callnumber).HasColumnName("CALLNUMBER");
-
-                entity.Property(e => e.Campaigncode)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGNCODE")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Cancelation).HasColumnName("CANCELATION");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(70)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(200)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
+                entity.Property(e => e.Campaigncode).IsFixedLength();
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .HasDefaultValueSql("('J')")
                     .IsFixedLength();
 
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(70)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Priority)
-                    .HasColumnName("PRIORITY")
-                    .HasDefaultValueSql("((5))");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Reason).HasColumnName("REASON");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Result).HasColumnName("RESULT");
-
-                entity.Property(e => e.ResultText).HasColumnName("RESULT_TEXT");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Priority).HasDefaultValueSql("((5))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.CallJobsAdduserNavigation)
@@ -1055,121 +790,22 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<CallList>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("CALL_LIST");
 
-                entity.Property(e => e.Callid)
-                    .HasMaxLength(32)
-                    .HasColumnName("CALLID");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Jobid).HasColumnName("JOBID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
-
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
-
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Statu).HasColumnName("STATU");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
             });
 
             modelBuilder.Entity<Campaigns>(entity =>
             {
-                entity.ToTable("CAMPAIGNS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Code, "IX_CAMPAIGNS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.CallbackTrunk)
-                    .HasMaxLength(150)
-                    .HasColumnName("CALLBACK_TRUNK");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(100)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(100)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Enddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDDATE");
-
-                entity.Property(e => e.Forallprojects)
-                    .HasColumnName("FORALLPROJECTS")
-                    .HasComputedColumnSql("(case when [PROJECT_DETAILID] IS NULL then (1) else (0) end)", false);
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Startdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTDATE");
+                entity.Property(e => e.Forallprojects).HasComputedColumnSql("(case when [PROJECT_DETAILID] IS NULL then (1) else (0) end)", false);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.CampaignsAdduserNavigation)
@@ -1206,32 +842,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CASHIER___3214EC263744268B")
                     .IsClustered(false);
 
-                entity.ToTable("CASHIER_HANDOVER");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isenddate).HasColumnName("ISENDDATE");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.CashierHandoverAdduserNavigation)
@@ -1269,23 +882,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CASHIER___3214EC26829369B8")
                     .IsClustered(false);
 
-                entity.ToTable("CASHIER_HANDOVER_ENTITY");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.CashierHandoverid).HasColumnName("CASHIER_HANDOVERID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Debt).HasColumnName("DEBT");
-
-                entity.Property(e => e.EntityType).HasColumnName("ENTITY_TYPE");
 
                 entity.HasOne(d => d.CashierHandover)
                     .WithMany(p => p.CashierHandoverEntity)
@@ -1302,17 +903,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<City>(entity =>
             {
-                entity.ToTable("CITY");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Countryid).HasColumnName("COUNTRYID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(70)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Country)
                     .WithMany(p => p.City)
@@ -1326,17 +917,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CONTACT___3214EC26D22EAE2D")
                     .IsClustered(false);
 
-                entity.ToTable("CONTACT_CATEGORY");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.ContactCategory)
@@ -1351,36 +932,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CONTACT___3214EC26B90220D6")
                     .IsClustered(false);
 
-                entity.ToTable("CONTACT_FORM");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Category).HasColumnName("CATEGORY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Messagetext).HasColumnName("MESSAGETEXT");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(200)
-                    .HasColumnName("TITLE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.ContactFormAdduserNavigation)
@@ -1412,74 +966,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Corp>(entity =>
             {
-                entity.ToTable("CORP");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Intid, "IX_CORP");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Addressid).HasColumnName("ADDRESSID");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.AutoPasswordForget).HasColumnName("AUTO_PASSWORD_FORGET");
-
-                entity.Property(e => e.AutoResmailClient).HasColumnName("AUTO_RESMAIL_CLIENT");
-
-                entity.Property(e => e.AutoResmailHost).HasColumnName("AUTO_RESMAIL_HOST");
-
-                entity.Property(e => e.Contact)
-                    .HasMaxLength(150)
-                    .HasColumnName("CONTACT");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Fax).HasColumnName("FAX");
-
-                entity.Property(e => e.GaCustomerid)
-                    .HasMaxLength(15)
-                    .HasColumnName("GA_CUSTOMERID");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(200)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Switchboardid).HasColumnName("SWITCHBOARDID");
-
-                entity.Property(e => e.Taxauth)
-                    .HasMaxLength(100)
-                    .HasColumnName("TAXAUTH");
-
-                entity.Property(e => e.Taxno)
-                    .HasMaxLength(30)
-                    .HasColumnName("TAXNO");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.Corp)
@@ -1514,25 +1005,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Country>(entity =>
             {
-                entity.ToTable("COUNTRY");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.DialCode)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIAL_CODE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Isocode2)
-                    .HasMaxLength(2)
                     .IsUnicode(false)
-                    .HasColumnName("ISOCODE2")
                     .IsFixedLength();
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(70)
-                    .HasColumnName("NAME");
             });
 
             modelBuilder.Entity<CrmCardgroups>(entity =>
@@ -1541,37 +1018,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CRM_CARD__3214EC264ECA644E")
                     .IsClustered(false);
 
-                entity.ToTable("CRM_CARDGROUPS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Definition }, "UQ__CRM_CARD__D0FAF6086F855A68")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.CrmCardgroupsAdduserNavigation)
@@ -1597,119 +1046,27 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__CRM_CARD__3214EC26CBABAEF5")
                     .IsClustered(false);
 
-                entity.ToTable("CRM_CARDTYPES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.CardnumberMargin).HasDefaultValueSql("(N'40px 25px 10px')");
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.ShowStripbottom).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Backcolor1)
-                    .HasMaxLength(20)
-                    .HasColumnName("BACKCOLOR1");
+                entity.Property(e => e.ShowStriptop).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Backcolor2)
-                    .HasMaxLength(20)
-                    .HasColumnName("BACKCOLOR2");
+                entity.Property(e => e.ShowcardBrand).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Backgroundlogo)
-                    .HasMaxLength(255)
-                    .HasColumnName("BACKGROUNDLOGO");
+                entity.Property(e => e.Showcardholdername).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Cardbrandiconurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("CARDBRANDICONURL");
+                entity.Property(e => e.ShowchipIcon).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Cardbrandlogo).HasColumnName("CARDBRANDLOGO");
+                entity.Property(e => e.Showexpire).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Cardgroupid).HasColumnName("CARDGROUPID");
+                entity.Property(e => e.Shownumbers).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.CardnumberMargin)
-                    .HasMaxLength(50)
-                    .HasColumnName("CARDNUMBER_MARGIN")
-                    .HasDefaultValueSql("(N'40px 25px 10px')");
-
-                entity.Property(e => e.CarduseRules).HasColumnName("CARDUSE_RULES");
-
-                entity.Property(e => e.Colorgroup1)
-                    .HasMaxLength(20)
-                    .HasColumnName("COLORGROUP1");
-
-                entity.Property(e => e.Colorgroup2)
-                    .HasMaxLength(20)
-                    .HasColumnName("COLORGROUP2");
-
-                entity.Property(e => e.Colorgroup3)
-                    .HasMaxLength(20)
-                    .HasColumnName("COLORGROUP3");
-
-                entity.Property(e => e.Colorgroup4)
-                    .HasMaxLength(20)
-                    .HasColumnName("COLORGROUP4");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.ShowStripbottom)
-                    .IsRequired()
-                    .HasColumnName("SHOW_STRIPBOTTOM")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.ShowStriptop)
-                    .IsRequired()
-                    .HasColumnName("SHOW_STRIPTOP")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.ShowcardBrand)
-                    .IsRequired()
-                    .HasColumnName("SHOWCARD_BRAND")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Showcardholdername)
-                    .IsRequired()
-                    .HasColumnName("SHOWCARDHOLDERNAME")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.ShowchipIcon)
-                    .IsRequired()
-                    .HasColumnName("SHOWCHIP_ICON")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Showexpire)
-                    .IsRequired()
-                    .HasColumnName("SHOWEXPIRE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Shownumbers)
-                    .IsRequired()
-                    .HasColumnName("SHOWNUMBERS")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.ShowwifiIcon)
-                    .IsRequired()
-                    .HasColumnName("SHOWWIFI_ICON")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(100)
-                    .HasColumnName("TITLE");
+                entity.Property(e => e.ShowwifiIcon).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.CrmCardtypesAdduserNavigation)
@@ -1731,46 +1088,16 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Curcode>(entity =>
             {
-                entity.HasKey(e => e.Code);
-
-                entity.ToTable("CURCODE");
-
                 entity.Property(e => e.Code)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.LogoEntid).HasColumnName("LOGO_ENTID");
             });
 
             modelBuilder.Entity<Currate>(entity =>
             {
-                entity.ToTable("CURRATE");
-
-                entity.HasIndex(e => new { e.Corpid, e.Curcode, e.Ratedate }, "IX_CURRATE");
-
-                entity.HasIndex(e => e.Ratedate, "IX_CURRATE_1");
-
-                entity.HasIndex(e => e.Ratedate, "IX_CURRATE_2");
-
-                entity.HasIndex(e => new { e.Corpid, e.Curcode, e.Ratedate }, "IX_CURRATE_4");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
-
-                entity.Property(e => e.Ratedate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("RATEDATE");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.Currate)
@@ -1785,65 +1112,21 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__DASHBOAR__3214EC27E2539AD9")
                     .IsClustered(false);
 
-                entity.ToTable("DASHBOARD");
-
                 entity.HasIndex(e => e.Sortorder, "IX_DASHBOARD")
                     .IsClustered();
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Columnwidths)
-                    .HasMaxLength(50)
-                    .HasColumnName("COLUMNWIDTHS")
-                    .HasDefaultValueSql("(N'1, 0.5, 0.5')");
+                entity.Property(e => e.Columnwidths).HasDefaultValueSql("(N'1, 0.5, 0.5')");
 
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.Maxcolumn)
-                    .HasColumnName("MAXCOLUMN")
-                    .HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Stateid)
-                    .HasMaxLength(50)
-                    .HasColumnName("STATEID");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(50)
-                    .HasColumnName("TITLE");
+                entity.Property(e => e.Maxcolumn).HasDefaultValueSql("((2))");
             });
 
             modelBuilder.Entity<DashboardItem>(entity =>
             {
-                entity.ToTable("DASHBOARD_ITEM");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Columnindex).HasColumnName("COLUMNINDEX");
-
-                entity.Property(e => e.Dashboardid).HasColumnName("DASHBOARDID");
-
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.DetailSql).HasColumnName("DETAIL_SQL");
-
-                entity.Property(e => e.Qsql).HasColumnName("QSQL");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(50)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Widgetname)
-                    .HasMaxLength(50)
-                    .HasColumnName("WIDGETNAME")
-                    .HasDefaultValueSql("(N'widget')");
+                entity.Property(e => e.Widgetname).HasDefaultValueSql("(N'widget')");
 
                 entity.HasOne(d => d.Dashboard)
                     .WithMany(p => p.DashboardItem)
@@ -1852,140 +1135,23 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__DASHBOARD__DASHB__24485945");
             });
 
-            modelBuilder.Entity<DashboardItemYdk>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("DASHBOARD_ITEM_YDK");
-
-                entity.Property(e => e.Columnindex).HasColumnName("COLUMNINDEX");
-
-                entity.Property(e => e.Dashboardid).HasColumnName("DASHBOARDID");
-
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.DetailSql).HasColumnName("DETAIL_SQL");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Qsql).HasColumnName("QSQL");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(50)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Widgetname)
-                    .HasMaxLength(50)
-                    .HasColumnName("WIDGETNAME");
-            });
-
-            modelBuilder.Entity<DashboardYdk>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("DASHBOARD_YDK");
-
-                entity.Property(e => e.Columnwidths)
-                    .HasMaxLength(50)
-                    .HasColumnName("COLUMNWIDTHS");
-
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Maxcolumn).HasColumnName("MAXCOLUMN");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Stateid)
-                    .HasMaxLength(50)
-                    .HasColumnName("STATEID");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(50)
-                    .HasColumnName("TITLE");
-            });
-
             modelBuilder.Entity<DataDictionary>(entity =>
             {
-                entity.ToTable("DATA_DICTIONARY");
-
-                entity.HasIndex(e => new { e.Recid, e.Tablename, e.Fieldname, e.Langcode }, "UQ__DATA_DIC__54F85D1A5F1C9BBD")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Fieldname)
-                    .HasMaxLength(150)
-                    .HasColumnName("FIELDNAME");
-
                 entity.Property(e => e.Langcode)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANGCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Recid).HasColumnName("RECID");
-
-                entity.Property(e => e.Tablename)
-                    .HasMaxLength(100)
-                    .HasColumnName("TABLENAME");
-
-                entity.Property(e => e.Val).HasColumnName("VAL");
             });
 
             modelBuilder.Entity<DbLog>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("DB_LOG");
 
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Logtext)
-                    .HasColumnType("ntext")
-                    .HasColumnName("LOGTEXT");
-
-                entity.Property(e => e.Logtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LOGTIME");
-
-                entity.Property(e => e.Recid)
-                    .HasMaxLength(45)
-                    .HasColumnName("RECID");
-
-                entity.Property(e => e.Tablename)
-                    .HasMaxLength(150)
-                    .HasColumnName("TABLENAME");
-
-                entity.Property(e => e.Traceflag)
-                    .HasMaxLength(25)
-                    .HasColumnName("TRACEFLAG");
-
-                entity.Property(e => e.Usercode)
-                    .HasMaxLength(150)
-                    .HasColumnName("USERCODE");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<District>(entity =>
             {
-                entity.ToTable("DISTRICT");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Cityid).HasColumnName("CITYID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(70)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.City)
                     .WithMany(p => p.District)
@@ -1994,178 +1160,15 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__DISTRICT__CITYID__60C757A0");
             });
 
-            modelBuilder.Entity<EntegrationSettings>(entity =>
-            {
-                entity.HasNoKey();
-
-                entity.ToTable("ENTEGRATION_SETTINGS");
-
-                entity.Property(e => e.Enttype)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENTTYPE");
-
-                entity.Property(e => e.FirstDate)
-                    .HasColumnType("date")
-                    .HasColumnName("FIRST_DATE");
-
-                entity.Property(e => e.LastDate)
-                    .HasColumnType("date")
-                    .HasColumnName("LAST_DATE");
-            });
-
             modelBuilder.Entity<HotelReservationDetails>(entity =>
             {
-                entity.ToTable("HOTEL_RESERVATION_DETAILS");
-
-                entity.HasIndex(e => e.Id, "IX_HOTEL_RESERVATION_DETAILS");
-
-                entity.HasIndex(e => e.Resid, "IX_MISS_HOTELSEARCH_2");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.Avail)
-                    .HasMaxLength(150)
-                    .HasColumnName("AVAIL");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.Combid).HasColumnName("COMBID");
-
-                entity.Property(e => e.Costprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("COSTPRICE");
-
-                entity.Property(e => e.Daln1).HasColumnName("DALN1");
-
-                entity.Property(e => e.Daln2).HasColumnName("DALN2");
-
-                entity.Property(e => e.Daln3).HasColumnName("DALN3");
-
-                entity.Property(e => e.Daln4).HasColumnName("DALN4");
-
-                entity.Property(e => e.Daln5).HasColumnName("DALN5");
-
-                entity.Property(e => e.Damt1).HasColumnName("DAMT1");
-
-                entity.Property(e => e.Damt2).HasColumnName("DAMT2");
-
-                entity.Property(e => e.Damt3).HasColumnName("DAMT3");
-
-                entity.Property(e => e.Damt4).HasColumnName("DAMT4");
-
-                entity.Property(e => e.Damt5).HasColumnName("DAMT5");
-
-                entity.Property(e => e.Dat1).HasColumnName("DAT1");
-
-                entity.Property(e => e.Dat2).HasColumnName("DAT2");
-
-                entity.Property(e => e.Dat3).HasColumnName("DAT3");
-
-                entity.Property(e => e.Dat4).HasColumnName("DAT4");
-
-                entity.Property(e => e.Dat5).HasColumnName("DAT5");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Dayofweek)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("DAYOFWEEK")
                     .IsFixedLength();
 
-                entity.Property(e => e.Dexp1)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEXP1");
-
-                entity.Property(e => e.Dexp2)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEXP2");
-
-                entity.Property(e => e.Dexp3)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEXP3");
-
-                entity.Property(e => e.Dexp4)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEXP4");
-
-                entity.Property(e => e.Dexp5)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEXP5");
-
-                entity.Property(e => e.Did1).HasColumnName("DID1");
-
-                entity.Property(e => e.Did2).HasColumnName("DID2");
-
-                entity.Property(e => e.Did3).HasColumnName("DID3");
-
-                entity.Property(e => e.Did4).HasColumnName("DID4");
-
-                entity.Property(e => e.Did5).HasColumnName("DID5");
-
-                entity.Property(e => e.Dt1).HasColumnName("DT1");
-
-                entity.Property(e => e.Dt2).HasColumnName("DT2");
-
-                entity.Property(e => e.Dt3).HasColumnName("DT3");
-
-                entity.Property(e => e.Dt4).HasColumnName("DT4");
-
-                entity.Property(e => e.Dt5).HasColumnName("DT5");
-
-                entity.Property(e => e.Finalcost)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("FINALCOST");
-
-                entity.Property(e => e.Finalprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("FINALPRICE");
-
-                entity.Property(e => e.Fixprice).HasColumnName("FIXPRICE");
-
-                entity.Property(e => e.Guestprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("GUESTPRICE");
-
-                entity.Property(e => e.Maxlos).HasColumnName("MAXLOS");
-
-                entity.Property(e => e.Minlos).HasColumnName("MINLOS");
-
-                entity.Property(e => e.Pricedebuginfo)
-                    .HasMaxLength(100)
-                    .HasColumnName("PRICEDEBUGINFO");
-
-                entity.Property(e => e.Pricesort).HasColumnName("PRICESORT");
-
-                entity.Property(e => e.Quota).HasColumnName("QUOTA");
-
-                entity.Property(e => e.Ratecodedetailid).HasColumnName("RATECODEDETAILID");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Remainingquota).HasColumnName("REMAININGQUOTA");
-
-                entity.Property(e => e.Resid).HasColumnName("RESID");
-
-                entity.Property(e => e.StopCheckin).HasColumnName("STOP_CHECKIN");
-
-                entity.Property(e => e.StopCheckout).HasColumnName("STOP_CHECKOUT");
-
-                entity.Property(e => e.StopSell).HasColumnName("STOP_SELL");
-
-                entity.Property(e => e.Tempid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("TEMPID");
+                entity.Property(e => e.Tempid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Comb)
                     .WithMany(p => p.HotelReservationDetails)
@@ -2190,51 +1193,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__HOTEL_RE__3214EC260D15FE65")
                     .IsClustered(false);
 
-                entity.ToTable("HOTEL_RESERVATIONS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Resid, "UQ__HOTEL_RE__4D969333596EF86E")
-                    .IsUnique();
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.ContractDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CONTRACT_DATE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(40)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.IsconfirmedGuest).HasColumnName("ISCONFIRMED_GUEST");
-
-                entity.Property(e => e.IsconfirmedHotel).HasColumnName("ISCONFIRMED_HOTEL");
-
-                entity.Property(e => e.IsconfirmedOwner).HasColumnName("ISCONFIRMED_OWNER");
-
-                entity.Property(e => e.LastupdateResdetail)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LASTUPDATE_RESDETAIL");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Resid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("RESID");
+                entity.Property(e => e.Resid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.HotelReservationsAdduserNavigation)
@@ -2254,83 +1217,11 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__HOTEL_RES__REQUE__625078B6");
             });
 
-            modelBuilder.Entity<IntegrationErrors>(entity =>
-            {
-                entity.ToTable("INTEGRATION_ERRORS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Errortext)
-                    .HasMaxLength(255)
-                    .HasColumnName("ERRORTEXT");
-
-                entity.Property(e => e.Insertid).HasColumnName("INSERTID");
-            });
-
             modelBuilder.Entity<LocationAddress>(entity =>
             {
-                entity.ToTable("LOCATION_ADDRESS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Cityid).HasColumnName("CITYID");
-
-                entity.Property(e => e.Countryid).HasColumnName("COUNTRYID");
-
-                entity.Property(e => e.Districtid).HasColumnName("DISTRICTID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.InvoiceEmail)
-                    .HasMaxLength(200)
-                    .HasColumnName("INVOICE_EMAIL");
-
-                entity.Property(e => e.InvoiceTaxno)
-                    .HasMaxLength(25)
-                    .HasColumnName("INVOICE_TAXNO");
-
-                entity.Property(e => e.InvoiceTaxplacename)
-                    .HasMaxLength(100)
-                    .HasColumnName("INVOICE_TAXPLACENAME");
-
-                entity.Property(e => e.InvoiceTitle)
-                    .HasMaxLength(200)
-                    .HasColumnName("INVOICE_TITLE");
-
-                entity.Property(e => e.InvoiceType).HasColumnName("INVOICE_TYPE");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Latitude).HasColumnName("LATITUDE");
-
-                entity.Property(e => e.Line1)
-                    .HasMaxLength(100)
-                    .HasColumnName("LINE1");
-
-                entity.Property(e => e.Line2)
-                    .HasMaxLength(100)
-                    .HasColumnName("LINE2");
-
-                entity.Property(e => e.Longitude).HasColumnName("LONGITUDE");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
-                entity.Property(e => e.Zipcode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ZIPCODE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.LocationAddressAdduserNavigation)
@@ -2361,52 +1252,14 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<MailContents>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("MAIL_CONTENTS");
 
-                entity.Property(e => e.Content).HasColumnName("CONTENT");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Mailid).HasColumnName("MAILID");
-
-                entity.Property(e => e.Mailuid).HasColumnName("MAILUID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<PaymentEmails>(entity =>
             {
-                entity.ToTable("PAYMENT_EMAILS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.BccEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("BCC_EMAILS");
-
-                entity.Property(e => e.CcEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("CC_EMAILS");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.FailText).HasColumnName("FAIL_TEXT");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.SuccessText).HasColumnName("SUCCESS_TEXT");
-
-                entity.Property(e => e.ToEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("TO_EMAILS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.PaymentEmails)
@@ -2430,62 +1283,15 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PAYMENTS__3214EC26489EFB7F")
                     .IsClustered(false);
 
-                entity.ToTable("PAYMENTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Credit).HasColumnName("CREDIT");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Debt).HasColumnName("DEBT");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(250)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Hardposidentity)
-                    .HasMaxLength(50)
-                    .HasColumnName("HARDPOSIDENTITY");
-
-                entity.Property(e => e.Isbonus).HasColumnName("ISBONUS");
-
-                entity.Property(e => e.Iscash).HasColumnName("ISCASH");
-
-                entity.Property(e => e.Isccard).HasColumnName("ISCCARD");
-
-                entity.Property(e => e.Paytype).HasColumnName("PAYTYPE");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.TlAmount)
-                    .HasColumnName("TL_AMOUNT")
-                    .HasComputedColumnSql("([dbo].[FN_CURRATE]([CORPID],[ADDDATE],[CURCODE],'TRY',[DEBT]+[CREDIT]))", false);
+                entity.Property(e => e.TlAmount).HasComputedColumnSql("([dbo].[FN_CURRATE]([CORPID],[ADDDATE],[CURCODE],'TRY',[DEBT]+[CREDIT]))", false);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PaymentsAdduserNavigation)
@@ -2529,133 +1335,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Person>(entity =>
             {
-                entity.ToTable("PERSON");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.RakamId, "IX_PERSON");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Firstname, "IX_PERSON_1");
-
-                entity.HasIndex(e => e.Nationality, "IX_PERSON_10");
-
-                entity.HasIndex(e => e.Isdeleted, "IX_PERSON_11");
-
-                entity.HasIndex(e => e.Kvkk, "IX_PERSON_12");
-
-                entity.HasIndex(e => e.Email, "IX_PERSON_13");
-
-                entity.HasIndex(e => e.Lastname, "IX_PERSON_2");
-
-                entity.HasIndex(e => e.Secondname, "IX_PERSON_3");
-
-                entity.HasIndex(e => e.Firstname, "IX_PERSON_4");
-
-                entity.HasIndex(e => e.Lastname, "IX_PERSON_5");
-
-                entity.HasIndex(e => e.Fullname, "IX_PERSON_6");
-
-                entity.HasIndex(e => e.Tel1, "IX_PERSON_7");
-
-                entity.HasIndex(e => e.Tel2, "IX_PERSON_8");
-
-                entity.HasIndex(e => e.Type, "IX_PERSON_9");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Birthdate)
-                    .HasColumnType("date")
-                    .HasColumnName("BIRTHDATE");
-
-                entity.Property(e => e.BonusCardtype)
-                    .HasMaxLength(150)
-                    .HasColumnName("BONUS_CARDTYPE");
-
-                entity.Property(e => e.BonusExpried).HasColumnName("BONUS_EXPRIED");
-
-                entity.Property(e => e.BonusGained).HasColumnName("BONUS_GAINED");
-
-                entity.Property(e => e.BonusLeft).HasColumnName("BONUS_LEFT");
-
-                entity.Property(e => e.BonusLeftamount).HasColumnName("BONUS_LEFTAMOUNT");
-
-                entity.Property(e => e.BonusUsed).HasColumnName("BONUS_USED");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Defaultname).HasColumnName("DEFAULTNAME");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(70)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(212)
-                    .HasColumnName("FULLNAME")
-                    .HasComputedColumnSql("((isnull([FIRSTNAME]+' ','')+isnull([SECONDNAME]+' ',''))+isnull([LASTNAME],''))", false);
-
-                entity.Property(e => e.Gender).HasColumnName("GENDER");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Identityno)
-                    .HasMaxLength(15)
-                    .HasColumnName("IDENTITYNO");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Kvkk).HasColumnName("KVKK");
-
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(70)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.Nationality).HasColumnName("NATIONALITY");
-
-                entity.Property(e => e.NewslatterFromemail).HasColumnName("NEWSLATTER_FROMEMAIL");
-
-                entity.Property(e => e.NewslatterFromsms).HasColumnName("NEWSLATTER_FROMSMS");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.RepeatGuest).HasColumnName("REPEAT_GUEST");
-
-                entity.Property(e => e.Secondname)
-                    .HasMaxLength(70)
-                    .HasColumnName("SECONDNAME");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(10)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
+                entity.Property(e => e.Fullname).HasComputedColumnSql("((isnull([FIRSTNAME]+' ','')+isnull([SECONDNAME]+' ',''))+isnull([LASTNAME],''))", false);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PersonAdduserNavigation)
@@ -2687,15 +1371,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PersonAddress>(entity =>
             {
-                entity.ToTable("PERSON_ADDRESS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Addressid).HasColumnName("ADDRESSID");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.PersonAddress)
@@ -2715,42 +1391,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PERSON_B__3214EC26FC14D486")
                     .IsClustered(false);
 
-                entity.ToTable("PERSON_BONUS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Point).HasColumnName("POINT");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Typeid).HasColumnName("TYPEID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PersonBonusAdduserNavigation)
@@ -2787,34 +1430,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PERSON_B__3214EC263CFE324A")
                     .IsClustered(false);
 
-                entity.ToTable("PERSON_BONUS_TYPES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isnegative).HasColumnName("ISNEGATIVE");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PersonBonusTypesAdduserNavigation)
@@ -2836,31 +1454,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PersonCcards>(entity =>
             {
-                entity.ToTable("PERSON_CCARDS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Cardnumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("CARDNUMBER");
-
-                entity.Property(e => e.Cardowner)
-                    .HasMaxLength(200)
-                    .HasColumnName("CARDOWNER");
-
-                entity.Property(e => e.Cvv)
-                    .HasMaxLength(5)
-                    .HasColumnName("CVV");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Validmonth).HasColumnName("VALIDMONTH");
-
-                entity.Property(e => e.Validyear).HasColumnName("VALIDYEAR");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Person)
                     .WithMany(p => p.PersonCcards)
@@ -2870,35 +1464,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PersonGroup>(entity =>
             {
-                entity.ToTable("PERSON_GROUP");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Name }, "IX_PERSON_GROUP")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(150)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PersonGroupAdduserNavigation)
@@ -2920,134 +1488,22 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Portal>(entity =>
             {
-                entity.ToTable("PORTAL");
+                entity.Property(e => e.AccountAutoCreateuserOnforgetpassform).HasDefaultValueSql("((1))");
 
-                entity.HasIndex(e => e.Uid, "IX_PORTAL")
-                    .IsUnique();
+                entity.Property(e => e.AccountLoginByPhone).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.AccountAutoCreateuserOnforgetpassform)
-                    .IsRequired()
-                    .HasColumnName("ACCOUNT_AUTO_CREATEUSER_ONFORGETPASSFORM")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.AccountBackgroundurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ACCOUNT_BACKGROUNDURL");
-
-                entity.Property(e => e.AccountCopyright)
-                    .HasMaxLength(150)
-                    .HasColumnName("ACCOUNT_COPYRIGHT");
-
-                entity.Property(e => e.AccountLoginByPhone)
-                    .IsRequired()
-                    .HasColumnName("ACCOUNT_LOGIN_BY_PHONE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.AccountLoginByRoomno).HasColumnName("ACCOUNT_LOGIN_BY_ROOMNO");
-
-                entity.Property(e => e.AccountLoginByVoucherno)
-                    .IsRequired()
-                    .HasColumnName("ACCOUNT_LOGIN_BY_VOUCHERNO")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.AccountLogo)
-                    .HasMaxLength(350)
-                    .HasColumnName("ACCOUNT_LOGO");
-
-                entity.Property(e => e.AccountUse).HasColumnName("ACCOUNT_USE");
-
-                entity.Property(e => e.ContactEmail)
-                    .HasMaxLength(240)
-                    .HasColumnName("CONTACT_EMAIL");
-
-                entity.Property(e => e.ContactMapurl)
-                    .HasMaxLength(400)
-                    .HasColumnName("CONTACT_MAPURL");
-
-                entity.Property(e => e.ContactPhone)
-                    .HasMaxLength(40)
-                    .HasColumnName("CONTACT_PHONE");
-
-                entity.Property(e => e.Corporationid).HasColumnName("CORPORATIONID");
-
-                entity.Property(e => e.CrmActive).HasColumnName("CRM_ACTIVE");
+                entity.Property(e => e.AccountLoginByVoucherno).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.DefaultCurcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("DEFAULT_CURCODE")
                     .HasDefaultValueSql("('TRY')")
                     .IsFixedLength();
 
-                entity.Property(e => e.DefaultLang)
-                    .HasMaxLength(5)
-                    .HasColumnName("DEFAULT_LANG")
-                    .HasDefaultValueSql("('tr-TR')");
+                entity.Property(e => e.DefaultLang).HasDefaultValueSql("('tr-TR')");
 
-                entity.Property(e => e.Displayname)
-                    .HasMaxLength(100)
-                    .HasColumnName("DISPLAYNAME");
+                entity.Property(e => e.MultipleCurcodes).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Domain)
-                    .HasMaxLength(100)
-                    .HasColumnName("DOMAIN");
-
-                entity.Property(e => e.Favicon)
-                    .HasMaxLength(250)
-                    .HasColumnName("FAVICON");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Logininfo)
-                    .HasColumnType("ntext")
-                    .HasColumnName("LOGININFO");
-
-                entity.Property(e => e.Logo)
-                    .HasMaxLength(250)
-                    .HasColumnName("LOGO");
-
-                entity.Property(e => e.Mode).HasColumnName("MODE");
-
-                entity.Property(e => e.MultipleCurcodes)
-                    .IsRequired()
-                    .HasColumnName("MULTIPLE_CURCODES")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.OfferBanner)
-                    .HasMaxLength(350)
-                    .HasColumnName("OFFER_BANNER");
-
-                entity.Property(e => e.OfferRules).HasColumnName("OFFER_RULES");
-
-                entity.Property(e => e.OfferText).HasColumnName("OFFER_TEXT");
-
-                entity.Property(e => e.PortalGroupname)
-                    .HasMaxLength(50)
-                    .HasColumnName("PORTAL_GROUPNAME");
-
-                entity.Property(e => e.PostekDomain)
-                    .HasMaxLength(100)
-                    .HasColumnName("POSTEK_DOMAIN");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.SetCurcodeBymarket).HasColumnName("SET_CURCODE_BYMARKET");
-
-                entity.Property(e => e.SetLangBymarket).HasColumnName("SET_LANG_BYMARKET");
-
-                entity.Property(e => e.Templatename)
-                    .HasMaxLength(50)
-                    .HasColumnName("TEMPLATENAME");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Corporation)
                     .WithMany(p => p.Portal)
@@ -3079,24 +1535,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_A__3214EC263CD31959")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_AUTH_IPADDRESS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Ipaddress, e.Portaluid }, "IX_PORTAL_AUTH_IPADDRESS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Ipaddress)
-                    .HasMaxLength(35)
-                    .HasColumnName("IPADDRESS");
-
-                entity.Property(e => e.Ismanager)
-                    .IsRequired()
-                    .HasColumnName("ISMANAGER")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
+                entity.Property(e => e.Ismanager).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.Portalu)
                     .WithMany(p => p.PortalAuthIpaddress)
@@ -3112,48 +1553,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_C__3214EC26899D975F")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_CATEGORIES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Portalid).HasColumnName("PORTALID");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(150)
-                    .HasColumnName("TYPE");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PortalCategoriesAdduserNavigation)
@@ -3179,48 +1583,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_C__3214EC2620C60564")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_CATEGORY_IMAGES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Catid).HasColumnName("CATID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(255)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Groupname)
-                    .HasMaxLength(100)
-                    .HasColumnName("GROUPNAME");
-
-                entity.Property(e => e.Imageurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("IMAGEURL");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Sortindex).HasColumnName("SORTINDEX");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("THUMBNAILURL");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PortalCategoryImagesAdduserNavigation)
@@ -3246,59 +1611,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_C__3214EC26CDAF71B5")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_CATEGORY_ITEMS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Catid).HasColumnName("CATID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(100)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Discount).HasColumnName("DISCOUNT");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Imageurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("IMAGEURL");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Price).HasColumnName("PRICE");
-
-                entity.Property(e => e.Sortindex).HasColumnName("SORTINDEX");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("THUMBNAILURL");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PortalCategoryItemsAdduserNavigation)
@@ -3335,20 +1652,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalCurrencies>(entity =>
             {
-                entity.ToTable("PORTAL_CURRENCIES");
-
-                entity.HasIndex(e => new { e.Curcode, e.Portaluid }, "IX_PORTAL_CURRENCIES")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
 
                 entity.HasOne(d => d.CurcodeNavigation)
                     .WithMany(p => p.PortalCurrencies)
@@ -3366,24 +1672,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalDescription>(entity =>
             {
-                entity.ToTable("PORTAL_DESCRIPTION");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Caption)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAPTION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Icon)
-                    .HasMaxLength(50)
-                    .HasColumnName("ICON");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
                 entity.HasOne(d => d.Portalu)
                     .WithMany(p => p.PortalDescription)
                     .HasPrincipalKey(p => p.Uid)
@@ -3398,37 +1686,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_D__3214EC267E745450")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_DOMAINS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Portaluid, e.Domain }, "UQ__PORTAL_D__73E21ECAE3DDAF90")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Domain)
-                    .HasMaxLength(250)
-                    .HasColumnName("DOMAIN");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Onlybody).HasColumnName("ONLYBODY");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PortalDomainsAdduserNavigation)
@@ -3455,25 +1715,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_E__3214EC2617569B3F")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_EMAILS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.BccEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("BCC_EMAILS");
-
-                entity.Property(e => e.CcEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("CC_EMAILS");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
-
-                entity.Property(e => e.ToEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("TO_EMAILS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Portalu)
                     .WithMany(p => p.PortalEmails)
@@ -3485,60 +1727,16 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalLangdictionary>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("PORTAL_LANGDICTIONARY");
 
-                entity.Property(e => e.ArSa)
-                    .HasMaxLength(250)
-                    .HasColumnName("ar-SA");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.DeDe)
-                    .HasMaxLength(250)
-                    .HasColumnName("de-DE");
-
-                entity.Property(e => e.EnUs)
-                    .HasMaxLength(250)
-                    .HasColumnName("en-US");
-
-                entity.Property(e => e.FiFi)
-                    .HasMaxLength(150)
-                    .HasColumnName("fi-FI");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Keyvalue)
-                    .HasMaxLength(150)
-                    .HasColumnName("KEYVALUE")
-                    .UseCollation("Turkish_CS_AS");
-
-                entity.Property(e => e.Keyvalue2)
-                    .HasMaxLength(150)
-                    .HasColumnName("KEYVALUE2");
-
-                entity.Property(e => e.RuRu)
-                    .HasMaxLength(250)
-                    .HasColumnName("ru-RU");
-
-                entity.Property(e => e.TrTr)
-                    .HasMaxLength(250)
-                    .HasColumnName("tr-TR");
+                entity.Property(e => e.Keyvalue).UseCollation("Turkish_CS_AS");
             });
 
             modelBuilder.Entity<PortalLanguages>(entity =>
             {
-                entity.ToTable("PORTAL_LANGUAGES");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Langcode)
-                    .HasMaxLength(5)
-                    .HasColumnName("LANGCODE")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
+                entity.Property(e => e.Langcode).IsFixedLength();
 
                 entity.HasOne(d => d.Portalu)
                     .WithMany(p => p.PortalLanguages)
@@ -3550,46 +1748,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalSeo>(entity =>
             {
-                entity.ToTable("PORTAL_SEO");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Keywords).HasColumnName("KEYWORDS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Lang)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANG")
                     .IsFixedLength();
-
-                entity.Property(e => e.Portalid).HasColumnName("PORTALID");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(250)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(150)
-                    .HasColumnName("URL");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PortalSeoAdduserNavigation)
@@ -3620,29 +1783,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PORTAL_S__3214EC260BC297DC")
                     .IsClustered(false);
 
-                entity.ToTable("PORTAL_SETTINGS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.BasketHideClientDetails).HasColumnName("BASKET_HIDE_CLIENT_DETAILS");
-
-                entity.Property(e => e.BasketShowClientGender).HasColumnName("BASKET_SHOW_CLIENT_GENDER");
-
-                entity.Property(e => e.BasketShowTransferOptions).HasColumnName("BASKET_SHOW_TRANSFER_OPTIONS");
-
-                entity.Property(e => e.CancelationRules).HasColumnName("CANCELATION_RULES");
-
-                entity.Property(e => e.Kvkk).HasColumnName("KVKK");
-
-                entity.Property(e => e.Policies).HasColumnName("POLICIES");
-
-                entity.Property(e => e.Portalid).HasColumnName("PORTALID");
-
-                entity.Property(e => e.Privacy).HasColumnName("PRIVACY");
-
-                entity.Property(e => e.SalesRules).HasColumnName("SALES_RULES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Portal)
                     .WithMany(p => p.PortalSettings)
@@ -3654,52 +1795,16 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalUrlrewrite>(entity =>
             {
-                entity.ToTable("PORTAL_URLREWRITE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Link).HasColumnName("LINK");
-
-                entity.Property(e => e.Validdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("VALIDDATE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<PortalUser>(entity =>
             {
-                entity.ToTable("PORTAL_USER");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Changedate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CHANGEDATE");
-
-                entity.Property(e => e.Changekey)
-                    .HasMaxLength(50)
-                    .HasColumnName("CHANGEKEY")
-                    .UseCollation("SQL_Latin1_General_CP1254_CI_AS");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(250)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Phone).HasColumnName("PHONE");
-
-                entity.Property(e => e.Pwd)
-                    .HasMaxLength(200)
-                    .HasColumnName("PWD");
+                entity.Property(e => e.Changekey).UseCollation("SQL_Latin1_General_CP1254_CI_AS");
 
                 entity.HasOne(d => d.Person)
                     .WithMany(p => p.PortalUser)
@@ -3710,23 +1815,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PortalUserSocialaccount>(entity =>
             {
-                entity.ToTable("PORTAL_USER_SOCIALACCOUNT");
-
-                entity.HasIndex(e => new { e.Userid, e.Providername, e.Providerid }, "UQ__PORTAL_U__47F26347B2CE65E0")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Providerid)
-                    .HasMaxLength(200)
-                    .HasColumnName("PROVIDERID");
-
-                entity.Property(e => e.Providername)
-                    .HasMaxLength(50)
-                    .HasColumnName("PROVIDERNAME");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
-
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.PortalUserSocialaccount)
                     .HasForeignKey(d => d.Userid)
@@ -3739,79 +1827,14 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PRODUCT___3214EC27CD324AEE")
                     .IsClustered(false);
 
-                entity.ToTable("PROJECT_GROUP");
-
-                entity.HasIndex(e => e.RakamId, "IX_PROJECT_GROUP");
-
                 entity.HasIndex(e => e.Name, "IX_PROJECT_GROUP_1")
                     .IsClustered();
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.AccCode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ACC_CODE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Addressid).HasColumnName("ADDRESSID");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.DontstoreCcards)
-                    .HasColumnName("DONTSTORE_CCARDS")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntSeturapikey)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURAPIKEY");
-
-                entity.Property(e => e.EntSetururl)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SETURURL");
-
-                entity.Property(e => e.EntUrl)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_URL");
-
-                entity.Property(e => e.EntUse).HasColumnName("ENT_USE");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Mergeclients).HasColumnName("MERGECLIENTS");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(150)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.ResMailurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("RES_MAILURL");
-
-                entity.Property(e => e.Usealternates).HasColumnName("USEALTERNATES");
+                entity.Property(e => e.DontstoreCcards).HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.ProjectGroup)
@@ -3837,152 +1860,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<ProjectGroupdetail>(entity =>
             {
-                entity.ToTable("PROJECT_GROUPDETAIL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Intid, "IX_PROJECT_GROUPDETAIL")
-                    .IsUnique();
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AccInvCode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ACC_INV_CODE");
-
-                entity.Property(e => e.AccPayCode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ACC_PAY_CODE");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(200)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.DontMerge).HasColumnName("DONT_MERGE");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(150)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.EntEtsid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ETSID");
-
-                entity.Property(e => e.EntEtsurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ENT_ETSURL");
-
-                entity.Property(e => e.EntHotelrunnerid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_HOTELRUNNERID");
-
-                entity.Property(e => e.EntHotelrunnerurl)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_HOTELRUNNERURL");
-
-                entity.Property(e => e.EntIatiid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_IATIID");
-
-                entity.Property(e => e.EntIatiurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ENT_IATIURL");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntJollytourid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_JOLLYTOURID");
-
-                entity.Property(e => e.EntJollytoururl)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_JOLLYTOURURL");
-
-                entity.Property(e => e.EntPortalid).HasColumnName("ENT_PORTALID");
-
-                entity.Property(e => e.EntSednaid)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAID");
-
-                entity.Property(e => e.EntSednaurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAURL");
-
-                entity.Property(e => e.EntSeturid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURID");
-
-                entity.Property(e => e.EntSetururl)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURURL");
-
-                entity.Property(e => e.EntTatilbudurid)
-                    .HasMaxLength(20)
-                    .HasColumnName("ENT_TATILBUDURID");
-
-                entity.Property(e => e.EntTatilbudururl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ENT_TATILBUDURURL");
-
-                entity.Property(e => e.EntTouristicaid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TOURISTICAID");
-
-                entity.Property(e => e.EntTouristicaurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ENT_TOURISTICAURL");
-
-                entity.Property(e => e.EntTravelclcikurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("ENT_TRAVELCLCIKURL");
-
-                entity.Property(e => e.EntTravelclickid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TRAVELCLICKID");
-
-                entity.Property(e => e.EntUrl)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_URL");
-
-                entity.Property(e => e.GaCustomerid)
-                    .HasMaxLength(15)
-                    .HasColumnName("GA_CUSTOMERID");
-
-                entity.Property(e => e.HideContracttabFromagents).HasColumnName("HIDE_CONTRACTTAB_FROMAGENTS");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.InvoiceDueday).HasColumnName("INVOICE_DUEDAY");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Productid)
-                    .HasColumnName("PRODUCTID")
-                    .HasComputedColumnSql("(coalesce([HOTELID],[TOURID],[TICKETID]))", false);
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.ResMailurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("RES_MAILURL");
-
-                entity.Property(e => e.Storeid).HasColumnName("STOREID");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
+                entity.Property(e => e.Productid).HasComputedColumnSql("(coalesce([HOTELID],[TOURID],[TICKETID]))", false);
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany(p => p.ProjectGroupdetail)
@@ -4017,25 +1899,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PROJECT___3214EC26C3F1EA7D")
                     .IsClustered(false);
 
-                entity.ToTable("PROJECT_GROUPDETAIL_BANKDEP");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.ProjectDetailid, e.Depaccountid }, "UQ__PROJECT___6EB8113D889D7241")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Depaccountid).HasColumnName("DEPACCOUNTID");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.UseInPortal)
-                    .IsRequired()
-                    .HasColumnName("USE_IN_PORTAL")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.UseInPortal).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.Depaccount)
                     .WithMany(p => p.ProjectGroupdetailBankdep)
@@ -4052,29 +1918,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<ProjectGroupdetailSeo>(entity =>
             {
-                entity.ToTable("PROJECT_GROUPDETAIL_SEO");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Keywords).HasColumnName("KEYWORDS");
-
                 entity.Property(e => e.Lang)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANG")
                     .IsFixedLength();
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(250)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(150)
-                    .HasColumnName("URL");
 
                 entity.HasOne(d => d.LangNavigation)
                     .WithMany(p => p.ProjectGroupdetailSeo)
@@ -4089,30 +1935,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PROJECT___3214EC2674987CD5")
                     .IsClustered(false);
 
-                entity.ToTable("PROJECT_GROUPDETAIL_VPOS");
-
-                entity.HasIndex(e => new { e.ProjectDetailid, e.Accountid }, "UQ__PROJECT___F7CFBB35722A2BCA")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Accountid).HasColumnName("ACCOUNTID");
-
-                entity.Property(e => e.Cardbrands)
-                    .HasMaxLength(220)
-                    .HasColumnName("CARDBRANDS");
-
-                entity.Property(e => e.Curcodes)
-                    .HasMaxLength(220)
-                    .HasColumnName("CURCODES");
-
-                entity.Property(e => e.Isdefault).HasColumnName("ISDEFAULT");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.ProjectDetail)
                     .WithMany(p => p.ProjectGroupdetailVpos)
@@ -4127,90 +1950,15 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PROMOTIO__3214EC26C010043A")
                     .IsClustered(false);
 
-                entity.ToTable("PROMOTION_CODES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(255)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(255)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Discount).HasColumnName("DISCOUNT");
-
-                entity.Property(e => e.Discountkind).HasColumnName("DISCOUNTKIND");
-
-                entity.Property(e => e.Discounttype).HasColumnName("DISCOUNTTYPE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(250)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Stayfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYFROM");
-
-                entity.Property(e => e.Stayto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYTO");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
-                entity.Property(e => e.Usecount)
-                    .HasColumnName("USECOUNT")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Usetype).HasColumnName("USETYPE");
+                entity.Property(e => e.Usecount).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.PromotionCodesAdduserNavigation)
@@ -4252,17 +2000,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PromotionCodesMarket>(entity =>
             {
-                entity.ToTable("PROMOTION_CODES_MARKET");
-
-                entity.HasIndex(e => new { e.Promotionid, e.Marketid }, "UQ__PROMOTION_CODES_MARKET__4B96FBB176D8588E")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Promotionid).HasColumnName("PROMOTIONID");
-
                 entity.HasOne(d => d.Market)
                     .WithMany(p => p.PromotionCodesMarket)
                     .HasForeignKey(d => d.Marketid)
@@ -4278,22 +2015,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PromotionCodesRoomtype>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("PROMOTION_CODES_ROOMTYPE");
-
-                entity.HasIndex(e => new { e.Promotionid, e.Roomtype }, "UQ__PROMOTIO__C1C5A5FA64991A60")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Promotionid).HasColumnName("PROMOTIONID");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(6)
-                    .HasColumnName("ROOMTYPE");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Promotion)
                     .WithMany()
@@ -4310,30 +2032,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<PropertyMapping>(entity =>
             {
-                entity.ToTable("PROPERTY_MAPPING");
-
-                entity.HasIndex(e => new { e.Hotelid, e.Boardtypeid, e.Providerid }, "IX_PROPERTY_MAPPING");
-
-                entity.HasIndex(e => new { e.Hotelid, e.Roomid, e.Providerid }, "IX_PROPERTY_MAPPING_1");
-
-                entity.HasIndex(e => new { e.Hotelid, e.Providerid, e.Ratetypeid }, "IX_PROPERTY_MAPPING_2");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Boardtypeid).HasColumnName("BOARDTYPEID");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(150)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Providerid).HasColumnName("PROVIDERID");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
-
-                entity.Property(e => e.Roomid).HasColumnName("ROOMID");
-
                 entity.HasOne(d => d.Boardtype)
                     .WithMany(p => p.PropertyMapping)
                     .HasForeignKey(d => d.Boardtypeid)
@@ -4368,24 +2066,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__PROPERTY__3214EC262A9FEFB2")
                     .IsClustered(false);
 
-                entity.ToTable("PROPERTY_PROVIDERS");
-
-                entity.HasIndex(e => new { e.Code, e.Corpid }, "UQ__PROPERTY__A871B86AD3936B19")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(20)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(150)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.PropertyProviders)
@@ -4399,217 +2080,32 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__REPORTS__3214EC2687F3CD71")
                     .IsClustered(false);
 
-                entity.ToTable("REPORTS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Classname)
-                    .HasMaxLength(50)
-                    .HasColumnName("CLASSNAME");
-
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.Exporttype)
-                    .HasMaxLength(25)
-                    .HasColumnName("EXPORTTYPE");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.Parentid).HasColumnName("PARENTID");
-
-                entity.Property(e => e.Reportname)
-                    .HasMaxLength(150)
-                    .HasColumnName("REPORTNAME");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             });
 
             modelBuilder.Entity<Request>(entity =>
             {
-                entity.ToTable("REQUEST");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Corpid, "IDX_MIS_DASHBOARD_REPORT2");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Adddate, "IX_REQUEST");
+                entity.Property(e => e.Creationdate).HasComputedColumnSql("(CONVERT([date],[ADDDATE]))", true);
 
-                entity.HasIndex(e => e.RakamId, "IX_REQUEST_1");
-
-                entity.HasIndex(e => new { e.Adddate, e.Corpid }, "IX_REQUEST_2");
-
-                entity.HasIndex(e => e.Creationdate, "IX_REQUEST_3");
-
-                entity.HasIndex(e => e.Editdate, "IX_REQUEST_4");
-
-                entity.HasIndex(e => e.Editdate, "IX_REQUEST_5");
-
-                entity.HasIndex(e => new { e.Editdate, e.Adddate }, "IX_REQUEST_6");
-
-                entity.HasIndex(e => e.Resourceid, "IX_REQUEST_7");
-
-                entity.HasIndex(e => new { e.Corpid, e.ProjectGroupid }, "IX_REQUEST_CORPID_PGID");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Agencyid).HasColumnName("AGENCYID");
-
-                entity.Property(e => e.AllowSingleMen).HasColumnName("ALLOW_SINGLE_MEN");
-
-                entity.Property(e => e.Campaigncode)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGNCODE");
-
-                entity.Property(e => e.Campaignid).HasColumnName("CAMPAIGNID");
-
-                entity.Property(e => e.CancelationWarranty).HasColumnName("CANCELATION_WARRANTY");
-
-                entity.Property(e => e.ConversationCustomerid)
-                    .HasMaxLength(50)
-                    .HasColumnName("CONVERSATION_CUSTOMERID");
-
-                entity.Property(e => e.ConversationId)
-                    .HasMaxLength(50)
-                    .HasColumnName("CONVERSATION_ID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Creationdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CREATIONDATE")
-                    .HasComputedColumnSql("(CONVERT([date],[ADDDATE]))", true);
-
-                entity.Property(e => e.Creationtime)
-                    .HasColumnName("CREATIONTIME")
-                    .HasComputedColumnSql("(CONVERT([time],[ADDDATE]))", true);
+                entity.Property(e => e.Creationtime).HasComputedColumnSql("(CONVERT([time],[ADDDATE]))", true);
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Entid).HasColumnName("ENTID");
-
-                entity.Property(e => e.InvoiceAddressid).HasColumnName("INVOICE_ADDRESSID");
-
-                entity.Property(e => e.InvoiceDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("INVOICE_DATE");
-
-                entity.Property(e => e.InvoiceEmail)
-                    .HasMaxLength(200)
-                    .HasColumnName("INVOICE_EMAIL");
-
-                entity.Property(e => e.InvoiceFirstname)
-                    .HasMaxLength(50)
-                    .HasColumnName("INVOICE_FIRSTNAME");
-
-                entity.Property(e => e.InvoiceKind)
-                    .HasColumnName("INVOICE_KIND")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.InvoiceLastname)
-                    .HasMaxLength(50)
-                    .HasColumnName("INVOICE_LASTNAME");
-
-                entity.Property(e => e.InvoiceTaxno)
-                    .HasMaxLength(25)
-                    .HasColumnName("INVOICE_TAXNO");
-
-                entity.Property(e => e.InvoiceTaxplacename)
-                    .HasMaxLength(100)
-                    .HasColumnName("INVOICE_TAXPLACENAME");
-
-                entity.Property(e => e.InvoiceTitle)
-                    .HasMaxLength(200)
-                    .HasColumnName("INVOICE_TITLE");
-
-                entity.Property(e => e.InvoiceType).HasColumnName("INVOICE_TYPE");
-
-                entity.Property(e => e.Iscalltransfer).HasColumnName("ISCALLTRANSFER");
+                entity.Property(e => e.InvoiceKind).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Langcode)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANGCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.OfferDescription).HasColumnName("OFFER_DESCRIPTION");
+                entity.Property(e => e.Sellingdate).HasComputedColumnSql("(CONVERT([date],[SELL_DATE]))", true);
 
-                entity.Property(e => e.OfferRules).HasColumnName("OFFER_RULES");
-
-                entity.Property(e => e.OfferText).HasColumnName("OFFER_TEXT");
-
-                entity.Property(e => e.Org).HasColumnName("ORG");
-
-                entity.Property(e => e.Password)
-                    .HasMaxLength(10)
-                    .HasColumnName("PASSWORD");
-
-                entity.Property(e => e.PayAtPlace).HasColumnName("PAY_AT_PLACE");
-
-                entity.Property(e => e.PersonCcardid).HasColumnName("PERSON_CCARDID");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Posaccountid).HasColumnName("POSACCOUNTID");
-
-                entity.Property(e => e.Posinstalmentid).HasColumnName("POSINSTALMENTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.ReqUrl)
-                    .HasMaxLength(500)
-                    .HasColumnName("REQ_URL");
-
-                entity.Property(e => e.Resno)
-                    .HasMaxLength(200)
-                    .HasColumnName("RESNO");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.SellDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELL_DATE");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Sellingdate)
-                    .HasColumnType("date")
-                    .HasColumnName("SELLINGDATE")
-                    .HasComputedColumnSql("(CONVERT([date],[SELL_DATE]))", true);
-
-                entity.Property(e => e.Sellingtime)
-                    .HasColumnName("SELLINGTIME")
-                    .HasComputedColumnSql("(CONVERT([time],[SELL_DATE]))", true);
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
+                entity.Property(e => e.Sellingtime).HasComputedColumnSql("(CONVERT([time],[SELL_DATE]))", true);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.RequestAdduserNavigation)
@@ -4661,42 +2157,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<RequestClients>(entity =>
             {
-                entity.ToTable("REQUEST_CLIENTS");
-
-                entity.HasIndex(e => e.Firstname, "IX_REQUEST_CLIENTS");
-
-                entity.HasIndex(e => e.Lastname, "IX_REQUEST_CLIENTS_1");
-
-                entity.HasIndex(e => e.RequestDetailid, "MISS_IDX_POS_PAYMENTS_LIST");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Birthdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("BIRTHDATE");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(100)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Gender).HasColumnName("GENDER");
-
-                entity.Property(e => e.Hescode)
-                    .HasMaxLength(60)
-                    .HasColumnName("HESCODE");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(100)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
                 entity.HasOne(d => d.RequestDetail)
                     .WithMany(p => p.RequestClients)
                     .HasForeignKey(d => d.RequestDetailid)
@@ -4706,359 +2166,45 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<RequestDetail>(entity =>
             {
-                entity.ToTable("REQUEST_DETAIL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Kind, "IDX_MIS_DASHBOARD_REPORT");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => new { e.Status, e.Roomtypeid, e.Date1 }, "IX_MISSING_HOTELSEARCH1");
+                entity.Property(e => e.Creationdate).HasComputedColumnSql("(CONVERT([date],[ADDDATE]))", true);
 
-                entity.HasIndex(e => new { e.Kind, e.Correlationid }, "IX_RD_KIND_CORRELATIOIN");
-
-                entity.HasIndex(e => new { e.Kind, e.Status }, "IX_RD_KIND_STATUS");
-
-                entity.HasIndex(e => new { e.Kind, e.Sellingdate }, "IX_RECOMMEND_RD_KIND_SELLINGDATE");
-
-                entity.HasIndex(e => new { e.Requestid, e.Kind }, "IX_REQUEST_DETAIL");
-
-                entity.HasIndex(e => new { e.Adduser, e.Edituser, e.Requestid }, "IX_REQUEST_DETAIL_1");
-
-                entity.HasIndex(e => e.DiscountReq, "IX_REQUEST_DETAIL_2");
-
-                entity.HasIndex(e => e.DiscountResult, "IX_REQUEST_DETAIL_3");
-
-                entity.HasIndex(e => e.SellDate, "IX_REQUEST_DETAIL_4");
-
-                entity.HasIndex(e => e.Intid, "IX_REQUEST_DETAIL_5");
-
-                entity.HasIndex(e => new { e.Requestid, e.Adduser, e.Edituser }, "IX_REQUEST_DETAIL_IMP");
-
-                entity.HasIndex(e => e.Kind, "MIS_INDEX_DASHBOARD_SALES_ANALYSIS_1");
-
-                entity.HasIndex(e => e.SwLogid, "MIS_IX_REQUESTID");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.AdditionalDiscountid).HasColumnName("ADDITIONAL_DISCOUNTID");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.AdultPrice).HasColumnName("ADULT_PRICE");
-
-                entity.Property(e => e.Age1).HasColumnName("AGE1");
-
-                entity.Property(e => e.Age2).HasColumnName("AGE2");
-
-                entity.Property(e => e.Age3).HasColumnName("AGE3");
-
-                entity.Property(e => e.Age4).HasColumnName("AGE4");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Bedcount).HasColumnName("BEDCOUNT");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(100)
-                    .HasColumnName("BOARDTYPE");
-
-                entity.Property(e => e.Boardtypeid).HasColumnName("BOARDTYPEID");
-
-                entity.Property(e => e.BonusTotal).HasColumnName("BONUS_TOTAL");
-
-                entity.Property(e => e.Campaignid).HasColumnName("CAMPAIGNID");
-
-                entity.Property(e => e.CancelationDays).HasColumnName("CANCELATION_DAYS");
-
-                entity.Property(e => e.CancelationRate).HasColumnName("CANCELATION_RATE");
-
-                entity.Property(e => e.CancellationDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CANCELLATION_DATE");
-
-                entity.Property(e => e.CancellationUserid).HasColumnName("CANCELLATION_USERID");
-
-                entity.Property(e => e.CancellationWarrantyRate).HasColumnName("CANCELLATION_WARRANTY_RATE");
-
-                entity.Property(e => e.Cancellationid)
-                    .HasMaxLength(50)
-                    .HasColumnName("CANCELLATIONID");
-
-                entity.Property(e => e.Chd1).HasColumnName("CHD1");
-
-                entity.Property(e => e.Chd1Birthdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CHD1_BIRTHDATE");
-
-                entity.Property(e => e.Chd2).HasColumnName("CHD2");
-
-                entity.Property(e => e.Chd2Birthdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CHD2_BIRTHDATE");
-
-                entity.Property(e => e.Chd3Birthdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CHD3_BIRTHDATE");
-
-                entity.Property(e => e.Chd4Birthdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CHD4_BIRTHDATE");
-
-                entity.Property(e => e.ChdPrice).HasColumnName("CHD_PRICE");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.Childages)
-                    .HasMaxLength(40)
-                    .HasColumnName("CHILDAGES");
-
-                entity.Property(e => e.ContractPrice).HasColumnName("CONTRACT_PRICE");
-
-                entity.Property(e => e.Correlationid).HasColumnName("CORRELATIONID");
-
-                entity.Property(e => e.Country)
-                    .HasMaxLength(120)
-                    .HasColumnName("COUNTRY");
-
-                entity.Property(e => e.Creationdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CREATIONDATE")
-                    .HasComputedColumnSql("(CONVERT([date],[ADDDATE]))", true);
-
-                entity.Property(e => e.Creationtime)
-                    .HasColumnName("CREATIONTIME")
-                    .HasComputedColumnSql("(CONVERT([time],[ADDDATE]))", true);
+                entity.Property(e => e.Creationtime).HasComputedColumnSql("(CONVERT([time],[ADDDATE]))", true);
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Currate).HasColumnName("CURRATE");
+                entity.Property(e => e.DiscountReq).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.Date1)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE1");
+                entity.Property(e => e.DiscountTotal).HasComputedColumnSql("(case when [DISCOUNT_RESULT]=(1) AND [DISCOUNT_RATE]>(0) then case [DISCOUNT_REQ] when (1) then CONVERT([float],isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))*(CONVERT([float],[DISCOUNT_RATE])/(100.0)) when (2) then [DISCOUNT_RATE] when (3) then (isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-[DISCOUNT_RATE] else (0) end else (0) end)", true);
 
-                entity.Property(e => e.Date2)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE2");
+                entity.Property(e => e.Editdate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(250)
-                    .HasColumnName("DESCRIPTION");
+                entity.Property(e => e.GrandTotal).HasComputedColumnSql("((isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-case when [DISCOUNT_RESULT]=(1) AND [DISCOUNT_RATE]>(0) then case [DISCOUNT_REQ] when (1) then CONVERT([float],isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))*(CONVERT([float],[DISCOUNT_RATE])/(100.0)) when (2) then [DISCOUNT_RATE] when (3) then (isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-[DISCOUNT_RATE] else (0) end else (0) end)", true);
 
-                entity.Property(e => e.DiscountCombination)
-                    .HasMaxLength(150)
-                    .HasColumnName("DISCOUNT_COMBINATION");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.DiscountDescription)
-                    .HasMaxLength(250)
-                    .HasColumnName("DISCOUNT_DESCRIPTION");
+                entity.Property(e => e.Isnotavailable).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.DiscountPercent).HasColumnName("DISCOUNT_PERCENT");
+                entity.Property(e => e.Productid).HasComputedColumnSql("(coalesce([HOTELID],[TOURID],[TICKETID],[TICKETGIFTID],[TRANSFER_PRICEID]))", false);
 
-                entity.Property(e => e.DiscountRate).HasColumnName("DISCOUNT_RATE");
+                entity.Property(e => e.Roundtrip).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.DiscountReq)
-                    .HasColumnName("DISCOUNT_REQ")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.Sellingdate).HasComputedColumnSql("(CONVERT([date],[SELL_DATE]))", true);
 
-                entity.Property(e => e.DiscountResult).HasColumnName("DISCOUNT_RESULT");
+                entity.Property(e => e.Sellingtime).HasComputedColumnSql("(CONVERT([time],[SELL_DATE]))", true);
 
-                entity.Property(e => e.DiscountResultdesc)
-                    .HasMaxLength(250)
-                    .HasColumnName("DISCOUNT_RESULTDESC");
+                entity.Property(e => e.Total).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.DiscountTotal)
-                    .HasColumnName("DISCOUNT_TOTAL")
-                    .HasComputedColumnSql("(case when [DISCOUNT_RESULT]=(1) AND [DISCOUNT_RATE]>(0) then case [DISCOUNT_REQ] when (1) then CONVERT([float],isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))*(CONVERT([float],[DISCOUNT_RATE])/(100.0)) when (2) then [DISCOUNT_RATE] when (3) then (isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-[DISCOUNT_RATE] else (0) end else (0) end)", true);
+                entity.Property(e => e.UseInoffer).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.EBoardtypeid)
-                    .HasMaxLength(25)
-                    .HasColumnName("E_BOARDTYPEID");
+                entity.Property(e => e.Validdate).HasComputedColumnSql("(dateadd(day,[VALIDDAY],[ADDDATE]))", true);
 
-                entity.Property(e => e.ERoomtypeid)
-                    .HasMaxLength(25)
-                    .HasColumnName("E_ROOMTYPEID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Entid).HasColumnName("ENTID");
-
-                entity.Property(e => e.Extnotes)
-                    .HasMaxLength(250)
-                    .HasColumnName("EXTNOTES");
-
-                entity.Property(e => e.Extra).HasColumnName("EXTRA");
-
-                entity.Property(e => e.ExtraTotal).HasColumnName("EXTRA_TOTAL");
-
-                entity.Property(e => e.Finalprices)
-                    .HasMaxLength(350)
-                    .HasColumnName("FINALPRICES");
-
-                entity.Property(e => e.Fromlocationid).HasColumnName("FROMLOCATIONID");
-
-                entity.Property(e => e.GrandTotal)
-                    .HasColumnName("GRAND_TOTAL")
-                    .HasComputedColumnSql("((isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-case when [DISCOUNT_RESULT]=(1) AND [DISCOUNT_RATE]>(0) then case [DISCOUNT_REQ] when (1) then CONVERT([float],isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))*(CONVERT([float],[DISCOUNT_RATE])/(100.0)) when (2) then [DISCOUNT_RATE] when (3) then (isnull([TOTAL],(0))+isnull([EXTRA_TOTAL],(0)))-[DISCOUNT_RATE] else (0) end else (0) end)", true);
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Icon)
-                    .HasMaxLength(250)
-                    .HasColumnName("ICON");
-
-                entity.Property(e => e.InterviewDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("INTERVIEW_DATE");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.InvoiceEntid).HasColumnName("INVOICE_ENTID");
-
-                entity.Property(e => e.Ipaddress)
-                    .HasMaxLength(25)
-                    .HasColumnName("IPADDRESS");
-
-                entity.Property(e => e.Isnotavailable)
-                    .HasColumnName("ISNOTAVAILABLE")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.ManualPrice)
-                    .HasMaxLength(50)
-                    .HasColumnName("MANUAL_PRICE");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.MenAccommodationForbidden).HasColumnName("MEN_ACCOMMODATION_FORBIDDEN");
-
-                entity.Property(e => e.National)
-                    .HasMaxLength(10)
-                    .HasColumnName("NATIONAL");
-
-                entity.Property(e => e.PaymentRate).HasColumnName("PAYMENT_RATE");
-
-                entity.Property(e => e.Pnr1)
-                    .HasMaxLength(15)
-                    .HasColumnName("PNR1");
-
-                entity.Property(e => e.Pnr2)
-                    .HasMaxLength(15)
-                    .HasColumnName("PNR2");
-
-                entity.Property(e => e.Possibility).HasColumnName("POSSIBILITY");
-
-                entity.Property(e => e.PriceConditionid).HasColumnName("PRICE_CONDITIONID");
-
-                entity.Property(e => e.Productid)
-                    .HasColumnName("PRODUCTID")
-                    .HasComputedColumnSql("(coalesce([HOTELID],[TOURID],[TICKETID],[TICKETGIFTID],[TRANSFER_PRICEID]))", false);
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Promotionid).HasColumnName("PROMOTIONID");
-
-                entity.Property(e => e.Quantity).HasColumnName("QUANTITY");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.ReservationSettingsid).HasColumnName("RESERVATION_SETTINGSID");
-
-                entity.Property(e => e.Resno)
-                    .HasMaxLength(50)
-                    .HasColumnName("RESNO");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(60)
-                    .HasColumnName("ROOMTYPE");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.Roundtrip)
-                    .IsRequired()
-                    .HasColumnName("ROUNDTRIP")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.SellDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELL_DATE");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Sellingdate)
-                    .HasColumnType("date")
-                    .HasColumnName("SELLINGDATE")
-                    .HasComputedColumnSql("(CONVERT([date],[SELL_DATE]))", true);
-
-                entity.Property(e => e.Sellingtime)
-                    .HasColumnName("SELLINGTIME")
-                    .HasComputedColumnSql("(CONVERT([time],[SELL_DATE]))", true);
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.SwLogid).HasColumnName("SW_LOGID");
-
-                entity.Property(e => e.TicketPriceid).HasColumnName("TICKET_PRICEID");
-
-                entity.Property(e => e.Ticketgiftid).HasColumnName("TICKETGIFTID");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Tolocationid).HasColumnName("TOLOCATIONID");
-
-                entity.Property(e => e.Total)
-                    .HasColumnName("TOTAL")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
-
-                entity.Property(e => e.TransferPriceid).HasColumnName("TRANSFER_PRICEID");
-
-                entity.Property(e => e.UseInoffer)
-                    .HasColumnName("USE_INOFFER")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Validdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("VALIDDATE")
-                    .HasComputedColumnSql("(dateadd(day,[VALIDDAY],[ADDDATE]))", true);
-
-                entity.Property(e => e.Validday)
-                    .HasColumnName("VALIDDAY")
-                    .HasDefaultValueSql("((3))");
-
-                entity.Property(e => e.Vehicleid).HasColumnName("VEHICLEID");
+                entity.Property(e => e.Validday).HasDefaultValueSql("((3))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.RequestDetailAdduserNavigation)
@@ -5193,15 +2339,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__REQUEST___3214EC267DBA7FEF")
                     .IsClustered(false);
 
-                entity.ToTable("REQUEST_DETAIL_ORGDATA");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Jsondata).HasColumnName("JSONDATA");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.RequestDetail)
                     .WithMany(p => p.RequestDetailOrgdata)
@@ -5212,34 +2350,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<RequestNotes>(entity =>
             {
-                entity.ToTable("REQUEST_NOTES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Note).HasColumnName("NOTE");
-
-                entity.Property(e => e.Nottype).HasColumnName("NOTTYPE");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.RequestNotesAdduserNavigation)
@@ -5264,31 +2377,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__REQUEST___3214EC2642FAFE10")
                     .IsClustered(false);
 
-                entity.ToTable("REQUEST_PAYMENTS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.CancelRate).HasColumnName("CANCEL_RATE");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.VirtualPosDepPaymentCancelid).HasColumnName("VIRTUAL_POS_DEP_PAYMENT_CANCELID");
-
-                entity.Property(e => e.VirtualPosDepPaymentid).HasColumnName("VIRTUAL_POS_DEP_PAYMENTID");
-
-                entity.Property(e => e.VirtualPosPaymentCancelid).HasColumnName("VIRTUAL_POS_PAYMENT_CANCELID");
-
-                entity.Property(e => e.VirtualPosPaymentid).HasColumnName("VIRTUAL_POS_PAYMENTID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Payment)
                     .WithMany(p => p.RequestPayments)
@@ -5326,159 +2415,21 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<RequestStatus>(entity =>
             {
-                entity.ToTable("REQUEST_STATUS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Substatus, "IX_REQUEST_STATUS");
-
-                entity.HasIndex(e => e.Type, "IX_REQUEST_STATUS_1");
-
-                entity.HasIndex(e => e.Sortorder, "IX_REQUEST_STATUS_2");
-
-                entity.HasIndex(e => new { e.Sortorder, e.Type }, "IX_REQUEST_STATUS_3");
-
-                entity.HasIndex(e => new { e.Substatus, e.Type }, "IX_REQUEST_STATUS_4");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AllowedSubstatus)
-                    .HasMaxLength(20)
-                    .HasColumnName("ALLOWED_SUBSTATUS");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(200)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.RakamType).HasColumnName("RAKAM_TYPE");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Substatus)
-                    .HasColumnName("SUBSTATUS")
-                    .HasComment("0=Active,1=Pasive");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
+                entity.Property(e => e.Substatus).HasComment("0=Active,1=Pasive");
             });
 
             modelBuilder.Entity<RequestYdk>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("REQUEST_YDK");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Campaigncode)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGNCODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Creationdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CREATIONDATE");
-
-                entity.Property(e => e.Creationtime).HasColumnName("CREATIONTIME");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Iscalltransfer).HasColumnName("ISCALLTRANSFER");
-
-                entity.Property(e => e.Org).HasColumnName("ORG");
-
-                entity.Property(e => e.PersonCcardid).HasColumnName("PERSON_CCARDID");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Posaccountid).HasColumnName("POSACCOUNTID");
-
-                entity.Property(e => e.Posinstalmentid).HasColumnName("POSINSTALMENTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.ReqUrl)
-                    .HasMaxLength(500)
-                    .HasColumnName("REQ_URL");
-
-                entity.Property(e => e.Resno)
-                    .HasMaxLength(200)
-                    .HasColumnName("RESNO");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.SellDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELL_DATE");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Sellingdate)
-                    .HasColumnType("date")
-                    .HasColumnName("SELLINGDATE");
-
-                entity.Property(e => e.Sellingtime).HasColumnName("SELLINGTIME");
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
             });
 
             modelBuilder.Entity<ReservationEmails>(entity =>
             {
-                entity.ToTable("RESERVATION_EMAILS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.BccEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("BCC_EMAILS");
-
-                entity.Property(e => e.CcEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("CC_EMAILS");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ToEmails)
-                    .HasMaxLength(500)
-                    .HasColumnName("TO_EMAILS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.ReservationEmails)
@@ -5497,24 +2448,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__RESERVAT__3214EC267337F112")
                     .IsClustered(false);
 
-                entity.ToTable("RESERVATION_RULES");
-
-                entity.HasIndex(e => e.ProjectDetailid, "UQ__RESERVAT__2639F4EA0E443A89")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.GeneralRules)
-                    .HasColumnType("ntext")
-                    .HasColumnName("GENERAL_RULES");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.RefundRules)
-                    .HasColumnType("ntext")
-                    .HasColumnName("REFUND_RULES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.ProjectDetail)
                     .WithOne(p => p.ReservationRules)
@@ -5528,64 +2462,13 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__RESERVAT__3214EC26B5F16E6C")
                     .IsClustered(false);
 
-                entity.ToTable("RESERVATION_SETTINGS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Startdate, e.Finishdate }, "IX_RESERVATION_SETTINGS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.CancellationWarrantyRateMaxDay).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.CancelationDays).HasColumnName("CANCELATION_DAYS");
-
-                entity.Property(e => e.CancelationDescription).HasColumnName("CANCELATION_DESCRIPTION");
-
-                entity.Property(e => e.CancelationRate).HasColumnName("CANCELATION_RATE");
-
-                entity.Property(e => e.CancellationWarrantyRate).HasColumnName("CANCELLATION_WARRANTY_RATE");
-
-                entity.Property(e => e.CancellationWarrantyRateMaxDay)
-                    .HasColumnName("CANCELLATION_WARRANTY_RATE_MAX_DAY")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.ChildrenAccommodationForbidden).HasColumnName("CHILDREN_ACCOMMODATION_FORBIDDEN");
-
-                entity.Property(e => e.ChildrenMaxage).HasColumnName("CHILDREN_MAXAGE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Finishdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("FINISHDATE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.MenAccommodationForbidden).HasColumnName("MEN_ACCOMMODATION_FORBIDDEN");
-
-                entity.Property(e => e.PaymentRate).HasColumnName("PAYMENT_RATE");
-
-                entity.Property(e => e.PaymentRateMaxDay)
-                    .HasColumnName("PAYMENT_RATE_MAX_DAY")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Startdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTDATE");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
+                entity.Property(e => e.PaymentRateMaxDay).HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.ReservationSettings)
@@ -5611,17 +2494,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<ReservationSettingsMarket>(entity =>
             {
-                entity.ToTable("RESERVATION_SETTINGS_MARKET");
-
-                entity.HasIndex(e => new { e.Settingsid, e.Marketid }, "UQ__RESERVATION_SETTINGS__4B96FBB176D8588E")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Settingsid).HasColumnName("SETTINGSID");
-
                 entity.HasOne(d => d.Market)
                     .WithMany(p => p.ReservationSettingsMarket)
                     .HasForeignKey(d => d.Marketid)
@@ -5636,39 +2508,15 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<ResourceBudget>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("RESOURCE_BUDGET");
-
-                entity.Property(e => e.Amount)
-                    .HasColumnName("AMOUNT")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Amount).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.IncomeAmount)
-                    .HasColumnName("INCOME_AMOUNT")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Ramount).HasColumnName("RAMOUNT");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Tdate)
-                    .HasColumnType("date")
-                    .HasColumnName("TDATE");
+                entity.Property(e => e.IncomeAmount).HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany()
@@ -5691,40 +2539,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<ResourceDetail>(entity =>
             {
-                entity.ToTable("RESOURCE_DETAIL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Detail)
-                    .HasMaxLength(150)
-                    .HasColumnName("DETAIL");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.ProjectGroupdetailid).HasColumnName("PROJECT_GROUPDETAILID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.ResourceDetailAdduserNavigation)
@@ -5752,60 +2569,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Resources>(entity =>
             {
-                entity.ToTable("RESOURCES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Code, e.Corpid }, "IX_RESOURCES")
-                    .IsUnique();
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(30)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.CostBudget).HasColumnName("COST_BUDGET");
-
-                entity.Property(e => e.DefaultDirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DEFAULT_DIRECT_BRANDING");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Icon)
-                    .HasMaxLength(35)
-                    .HasColumnName("ICON");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Masterid).HasColumnName("MASTERID");
-
-                entity.Property(e => e.RakamDesc)
-                    .HasMaxLength(50)
-                    .HasColumnName("RAKAM_DESC");
-
-                entity.Property(e => e.Resourcespath)
-                    .HasMaxLength(500)
-                    .HasColumnName("RESOURCESPATH")
-                    .HasComputedColumnSql("([DBO].[FN_RESOURCE_PATH]([CODE],[CORPID]))", false);
+                entity.Property(e => e.Resourcespath).HasComputedColumnSql("([DBO].[FN_RESOURCE_PATH]([CODE],[CORPID]))", false);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.ResourcesAdduserNavigation)
@@ -5827,33 +2595,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<RoleAuth>(entity =>
             {
-                entity.ToTable("ROLE_AUTH");
-
-                entity.HasIndex(e => new { e.Roleid, e.Modulename }, "IX_ROLE_AUTH")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Canadd).HasColumnName("CANADD");
-
-                entity.Property(e => e.Candelete).HasColumnName("CANDELETE");
-
-                entity.Property(e => e.Canedit).HasColumnName("CANEDIT");
-
-                entity.Property(e => e.Canexport).HasColumnName("CANEXPORT");
-
-                entity.Property(e => e.Canlist).HasColumnName("CANLIST");
-
-                entity.Property(e => e.Canprint).HasColumnName("CANPRINT");
-
-                entity.Property(e => e.Canview).HasColumnName("CANVIEW");
-
-                entity.Property(e => e.Modulename)
-                    .HasMaxLength(150)
-                    .HasColumnName("MODULENAME");
-
-                entity.Property(e => e.Roleid).HasColumnName("ROLEID");
-
                 entity.HasOne(d => d.Role)
                     .WithMany(p => p.RoleAuth)
                     .HasForeignKey(d => d.Roleid)
@@ -5862,34 +2603,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Roles>(entity =>
             {
-                entity.ToTable("ROLES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Moduleid).HasColumnName("MODULEID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .HasColumnName("NAME");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.RolesAdduserNavigation)
@@ -5914,32 +2630,12 @@ namespace Asisia.webapi.Models.Db
                 entity.HasKey(e => e.Id)
                     .IsClustered(false);
 
-                entity.ToTable("ROLES_CUSTOMAUTH");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.CreditcardAdmin).HasColumnName("CREDITCARD_ADMIN");
-
-                entity.Property(e => e.DiscountAdmin).HasColumnName("DISCOUNT_ADMIN");
-
-                entity.Property(e => e.Roleid).HasColumnName("ROLEID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
             });
 
             modelBuilder.Entity<RolesDashboards>(entity =>
             {
-                entity.ToTable("ROLES_DASHBOARDS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Allow).HasColumnName("ALLOW");
-
-                entity.Property(e => e.Dashboardid).HasColumnName("DASHBOARDID");
-
-                entity.Property(e => e.Roleid).HasColumnName("ROLEID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Dashboard)
                     .WithMany(p => p.RolesDashboards)
@@ -5956,30 +2652,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<SalesReq>(entity =>
             {
-                entity.ToTable("SALES_REQ");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.ResourceDetailid).HasColumnName("RESOURCE_DETAILID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.SalesReqAdduserNavigation)
@@ -6006,63 +2681,20 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Sil>(entity =>
             {
-                entity.HasNoKey();
+                entity.Property(e => e.Code).IsUnicode(false);
 
-                entity.ToTable("SIL");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("code");
-
-                entity.Property(e => e.DialCode)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("dial_code");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.Property(e => e.DialCode).IsUnicode(false);
 
                 entity.Property(e => e.Isocode2)
-                    .HasMaxLength(2)
                     .IsUnicode(false)
-                    .HasColumnName("ISOCODE2")
                     .IsFixedLength();
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
+                entity.Property(e => e.Name).IsUnicode(false);
             });
 
             modelBuilder.Entity<SmsMessage>(entity =>
             {
-                entity.ToTable("SMS_MESSAGE");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Issent).HasColumnName("ISSENT");
-
-                entity.Property(e => e.Messagebody)
-                    .HasMaxLength(400)
-                    .HasColumnName("MESSAGEBODY");
-
-                entity.Property(e => e.Numbers).HasColumnName("NUMBERS");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Senddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SENDDATE");
-
-                entity.Property(e => e.Senderror)
-                    .HasMaxLength(250)
-                    .HasColumnName("SENDERROR");
-
-                entity.Property(e => e.Smsid).HasColumnName("SMSID");
-
-                entity.Property(e => e.Type)
-                    .HasColumnName("TYPE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Type).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.RequestDetail)
                     .WithMany(p => p.SmsMessage)
@@ -6081,52 +2713,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SMS_SETT__3214EC268E118F99")
                     .IsClustered(false);
 
-                entity.ToTable("SMS_SETTINGS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Param)
-                    .HasMaxLength(100)
-                    .HasColumnName("PARAM");
-
-                entity.Property(e => e.Pass)
-                    .HasMaxLength(100)
-                    .HasColumnName("PASS");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.Sender)
-                    .HasMaxLength(100)
-                    .HasColumnName("SENDER");
-
-                entity.Property(e => e.Smsclassname)
-                    .HasMaxLength(100)
-                    .HasColumnName("SMSCLASSNAME");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.SmsSettingsAdduserNavigation)
@@ -6157,59 +2746,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<SmtpMails>(entity =>
             {
-                entity.ToTable("SMTP_MAILS");
-
-                entity.HasIndex(e => e.Senddate, "IX_SMTP_MAILS");
-
-                entity.HasIndex(e => e.Senddate, "IX_SMTP_MAILS_1");
-
-                entity.HasIndex(e => e.Issent, "IX_SMTP_MAILS_2");
-
-                entity.HasIndex(e => new { e.Requestid, e.To }, "IX_SMTP_MAILS_3");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Cc)
-                    .HasMaxLength(350)
-                    .HasColumnName("_CC");
-
-                entity.Property(e => e.Host)
-                    .HasMaxLength(100)
-                    .HasColumnName("HOST");
-
-                entity.Property(e => e.Issent).HasColumnName("ISSENT");
-
-                entity.Property(e => e.Reportid).HasColumnName("REPORTID");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Senddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SENDDATE");
-
-                entity.Property(e => e.Sendermail)
-                    .HasMaxLength(200)
-                    .HasColumnName("SENDERMAIL");
-
-                entity.Property(e => e.Sendername)
-                    .HasMaxLength(150)
-                    .HasColumnName("SENDERNAME");
-
-                entity.Property(e => e.Senderror)
-                    .HasMaxLength(250)
-                    .HasColumnName("SENDERROR");
-
-                entity.Property(e => e.Smtpid).HasColumnName("SMTPID");
-
-                entity.Property(e => e.To)
-                    .HasMaxLength(350)
-                    .HasColumnName("_TO");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Report)
                     .WithMany(p => p.SmtpMails)
@@ -6238,66 +2775,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SMTP_SET__3214EC2647672D81")
                     .IsClustered(false);
 
-                entity.ToTable("SMTP_SETTINGS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Domain)
-                    .HasMaxLength(100)
-                    .HasColumnName("DOMAIN");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Host)
-                    .HasMaxLength(100)
-                    .HasColumnName("HOST");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Pass)
-                    .HasMaxLength(100)
-                    .HasColumnName("PASS");
-
-                entity.Property(e => e.Portno)
-                    .HasColumnName("PORTNO")
-                    .HasDefaultValueSql("((25))");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.Sendermail)
-                    .HasMaxLength(100)
-                    .HasColumnName("SENDERMAIL");
-
-                entity.Property(e => e.Sendername)
-                    .HasMaxLength(150)
-                    .HasColumnName("SENDERNAME");
-
-                entity.Property(e => e.Tsl)
-                    .HasMaxLength(25)
-                    .HasColumnName("TSL");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Portno).HasDefaultValueSql("((25))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.SmtpSettingsAdduserNavigation)
@@ -6323,2591 +2805,684 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<SntAgentStatus>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_AGENT_STATUS");
 
-                entity.Property(e => e.Agentname)
-                    .HasMaxLength(150)
-                    .HasColumnName("AGENTNAME");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Isbreak).HasColumnName("ISBREAK");
-
-                entity.Property(e => e.Starttime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTTIME");
-
-                entity.Property(e => e.Statu)
-                    .HasMaxLength(30)
-                    .HasColumnName("STATU");
-
-                entity.Property(e => e.Statuid).HasColumnName("STATUID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<SntCallDetail>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_DETAIL");
 
-                entity.Property(e => e.Abandon).HasColumnName("ABANDON");
+                entity.Property(e => e.Channel).IsUnicode(false);
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(32)
-                    .HasColumnName("agent");
+                entity.Property(e => e.Clid).IsUnicode(false);
 
-                entity.Property(e => e.Answer)
-                    .HasColumnType("datetime")
-                    .HasColumnName("answer");
+                entity.Property(e => e.Dcontext).IsUnicode(false);
 
-                entity.Property(e => e.Answered).HasColumnName("ANSWERED");
+                entity.Property(e => e.Disposition).IsUnicode(false);
 
-                entity.Property(e => e.Billsec).HasColumnName("billsec");
+                entity.Property(e => e.Dst).IsUnicode(false);
 
-                entity.Property(e => e.Busy).HasColumnName("BUSY");
+                entity.Property(e => e.Lastapp).IsUnicode(false);
 
-                entity.Property(e => e.Calldate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("calldate");
+                entity.Property(e => e.Lastdata).IsUnicode(false);
 
-                entity.Property(e => e.Cdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CDATE");
+                entity.Property(e => e.Src).IsUnicode(false);
 
-                entity.Property(e => e.Cday).HasColumnName("CDAY");
+                entity.Property(e => e.Uniqueid).IsUnicode(false);
 
-                entity.Property(e => e.Channel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("channel");
-
-                entity.Property(e => e.Clid)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("clid");
-
-                entity.Property(e => e.Cmonth).HasColumnName("CMONTH");
-
-                entity.Property(e => e.Cyear).HasColumnName("CYEAR");
-
-                entity.Property(e => e.Dcontext)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dcontext");
-
-                entity.Property(e => e.Disposition)
-                    .HasMaxLength(45)
-                    .IsUnicode(false)
-                    .HasColumnName("disposition");
-
-                entity.Property(e => e.Dst)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dst");
-
-                entity.Property(e => e.Duration).HasColumnName("duration");
-
-                entity.Property(e => e.End)
-                    .HasColumnType("datetime")
-                    .HasColumnName("end");
-
-                entity.Property(e => e.Enterqueue).HasColumnName("ENTERQUEUE");
-
-                entity.Property(e => e.Event)
-                    .HasMaxLength(32)
-                    .HasColumnName("event");
-
-                entity.Property(e => e.Failed).HasColumnName("FAILED");
-
-                entity.Property(e => e.Inbound).HasColumnName("INBOUND");
-
-                entity.Property(e => e.Lastapp)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastapp");
-
-                entity.Property(e => e.Lastdata)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastdata");
-
-                entity.Property(e => e.Noanswer).HasColumnName("NOANSWER");
-
-                entity.Property(e => e.Otherdepartment).HasColumnName("OTHERDEPARTMENT");
-
-                entity.Property(e => e.Outbound).HasColumnName("OUTBOUND");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(32)
-                    .HasColumnName("queuename");
-
-                entity.Property(e => e.Resabandon).HasColumnName("RESABANDON");
-
-                entity.Property(e => e.Resinbound).HasColumnName("RESINBOUND");
-
-                entity.Property(e => e.Resoutbound).HasColumnName("RESOUTBOUND");
-
-                entity.Property(e => e.Sentqueue).HasColumnName("SENTQUEUE");
-
-                entity.Property(e => e.Src)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("src");
-
-                entity.Property(e => e.Start)
-                    .HasColumnType("datetime")
-                    .HasColumnName("start");
-
-                entity.Property(e => e.Transfercall).HasColumnName("TRANSFERCALL");
-
-                entity.Property(e => e.Uniqueid)
-                    .HasMaxLength(150)
-                    .IsUnicode(false)
-                    .HasColumnName("uniqueid");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCallJobs>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_JOBS");
 
-                entity.Property(e => e.Callnumber).HasColumnName("CALLNUMBER");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Campaigncode)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGNCODE")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(212)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
-
-                entity.Property(e => e.Jobend).HasColumnName("jobend");
-
-                entity.Property(e => e.Jobstart).HasColumnName("jobstart");
+                entity.Property(e => e.Campaigncode).IsFixedLength();
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
 
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
+                entity.Property(e => e.Queuename).IsUnicode(false);
 
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("QUEUENAME");
-
-                entity.Property(e => e.Reason)
-                    .HasMaxLength(33)
-                    .IsUnicode(false)
-                    .HasColumnName("REASON");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Sortfld)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SORTFLD");
-
-                entity.Property(e => e.State)
-                    .HasMaxLength(25)
-                    .HasColumnName("STATE");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Reason).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCallList>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_LIST");
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(100)
-                    .HasColumnName("AGENT");
+                entity.Property(e => e.Queuename).IsUnicode(false);
 
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
-
-                entity.Property(e => e.Jobend).HasColumnName("JOBEND");
-
-                entity.Property(e => e.Jostart).HasColumnName("JOSTART");
-
-                entity.Property(e => e.LastCalltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("LAST_CALLTIME");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phone)
-                    .HasMaxLength(255)
-                    .HasColumnName("PHONE");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queueid).HasColumnName("QUEUEID");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("QUEUENAME");
-
-                entity.Property(e => e.State)
-                    .HasMaxLength(25)
-                    .HasColumnName("STATE");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(1)
-                    .IsUnicode(false)
-                    .HasColumnName("TYPE");
+                entity.Property(e => e.Type).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCallListOrg>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_LIST_ORG");
 
-                entity.Property(e => e.Callid)
-                    .HasMaxLength(32)
-                    .HasColumnName("CALLID");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Jobid).HasColumnName("JOBID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
-
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
-
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Statu).HasColumnName("STATU");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
             });
 
             modelBuilder.Entity<SntCallStatus>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_STATUS");
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(25)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<SntCallSummary>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_SUMMARY");
-
-                entity.Property(e => e.Abandon).HasColumnName("ABANDON");
-
-                entity.Property(e => e.Answered).HasColumnName("ANSWERED");
-
-                entity.Property(e => e.Busy).HasColumnName("BUSY");
-
-                entity.Property(e => e.Callcount).HasColumnName("CALLCOUNT");
-
-                entity.Property(e => e.Calltime)
-                    .HasMaxLength(53)
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Cdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CDATE");
-
-                entity.Property(e => e.Duration).HasColumnName("DURATION");
-
-                entity.Property(e => e.Failed).HasColumnName("FAILED");
-
-                entity.Property(e => e.Inbound).HasColumnName("INBOUND");
-
-                entity.Property(e => e.InboundSingle).HasColumnName("INBOUND_SINGLE");
-
-                entity.Property(e => e.Noanswer).HasColumnName("NOANSWER");
-
-                entity.Property(e => e.Otherdepartment).HasColumnName("OTHERDEPARTMENT");
-
-                entity.Property(e => e.Rescalltime)
-                    .HasMaxLength(53)
-                    .HasColumnName("RESCALLTIME");
-
-                entity.Property(e => e.Resinbound).HasColumnName("RESINBOUND");
-
-                entity.Property(e => e.ResinboundDuration).HasColumnName("RESINBOUND_DURATION");
-
-                entity.Property(e => e.Resoutbound).HasColumnName("RESOUTBOUND");
-
-                entity.Property(e => e.Transfercall).HasColumnName("TRANSFERCALL");
             });
 
             modelBuilder.Entity<SntCallTotals>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALL_TOTALS");
 
-                entity.Property(e => e.AbandonAvgwait).HasColumnName("ABANDON_AVGWAIT");
+                entity.Property(e => e.Cdayname).IsUnicode(false);
 
-                entity.Property(e => e.AbandonMaxwait).HasColumnName("ABANDON_MAXWAIT");
-
-                entity.Property(e => e.AbandonTotalwait).HasColumnName("ABANDON_TOTALWAIT");
-
-                entity.Property(e => e.Abandoncall).HasColumnName("ABANDONCALL");
-
-                entity.Property(e => e.AnsweredAvgwait).HasColumnName("ANSWERED_AVGWAIT");
-
-                entity.Property(e => e.AnsweredMaxwait).HasColumnName("ANSWERED_MAXWAIT");
-
-                entity.Property(e => e.AnsweredTotalwait).HasColumnName("ANSWERED_TOTALWAIT");
-
-                entity.Property(e => e.Answeredcall).HasColumnName("ANSWEREDCALL");
-
-                entity.Property(e => e.Avgduration).HasColumnName("AVGDURATION");
-
-                entity.Property(e => e.Avgrealduration).HasColumnName("AVGREALDURATION");
-
-                entity.Property(e => e.Avgwait).HasColumnName("AVGWAIT");
-
-                entity.Property(e => e.Callcount).HasColumnName("CALLCOUNT");
-
-                entity.Property(e => e.Campaign)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGN");
-
-                entity.Property(e => e.Cdate)
-                    .HasColumnType("date")
-                    .HasColumnName("CDATE");
-
-                entity.Property(e => e.Cday).HasColumnName("CDAY");
-
-                entity.Property(e => e.Cdayname)
-                    .HasMaxLength(9)
-                    .IsUnicode(false)
-                    .HasColumnName("CDAYNAME");
-
-                entity.Property(e => e.Cmonthname)
-                    .HasMaxLength(7)
-                    .IsUnicode(false)
-                    .HasColumnName("CMONTHNAME");
-
-                entity.Property(e => e.Cweek).HasColumnName("CWEEK");
-
-                entity.Property(e => e.Cyear).HasColumnName("CYEAR");
-
-                entity.Property(e => e.Maxduration).HasColumnName("MAXDURATION");
-
-                entity.Property(e => e.Maxrealduration).HasColumnName("MAXREALDURATION");
-
-                entity.Property(e => e.Maxwait).HasColumnName("MAXWAIT");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(200)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Projectname)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROJECTNAME");
-
-                entity.Property(e => e.Totalduration).HasColumnName("TOTALDURATION");
-
-                entity.Property(e => e.Totalrealduration).HasColumnName("TOTALREALDURATION");
-
-                entity.Property(e => e.Totalwait).HasColumnName("TOTALWAIT");
+                entity.Property(e => e.Cmonthname).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCallbackIgnores>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALLBACK_IGNORES");
 
                 entity.Property(e => e.Id).ValueGeneratedOnAdd();
-
-                entity.Property(e => e.Number).HasMaxLength(25);
             });
 
             modelBuilder.Entity<SntCalls>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CALLS");
 
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("accountcode");
+                entity.Property(e => e.Accountcode).IsUnicode(false);
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("AGENT");
+                entity.Property(e => e.Agent).IsUnicode(false);
 
-                entity.Property(e => e.Amaflags)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("amaflags");
+                entity.Property(e => e.Amaflags).IsUnicode(false);
 
-                entity.Property(e => e.Answer)
-                    .HasColumnType("datetime")
-                    .HasColumnName("answer");
+                entity.Property(e => e.Channel).IsUnicode(false);
 
-                entity.Property(e => e.Billsec).HasColumnName("billsec");
+                entity.Property(e => e.Chn).IsUnicode(false);
 
-                entity.Property(e => e.Calldate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("calldate");
+                entity.Property(e => e.Clid).IsUnicode(false);
 
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
+                entity.Property(e => e.Dcontext).IsUnicode(false);
 
-                entity.Property(e => e.Callerid)
-                    .HasMaxLength(30)
-                    .HasColumnName("callerid");
+                entity.Property(e => e.Disposition).IsUnicode(false);
 
-                entity.Property(e => e.Channel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("channel");
+                entity.Property(e => e.Dst).IsUnicode(false);
 
-                entity.Property(e => e.Chn)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("CHN");
+                entity.Property(e => e.Dstchannel).IsUnicode(false);
 
-                entity.Property(e => e.Clid)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("clid");
+                entity.Property(e => e.Lastapp).IsUnicode(false);
 
-                entity.Property(e => e.Dcontext)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dcontext");
+                entity.Property(e => e.Lastdata).IsUnicode(false);
 
-                entity.Property(e => e.Disposition)
-                    .HasMaxLength(45)
-                    .IsUnicode(false)
-                    .HasColumnName("disposition");
+                entity.Property(e => e.Phn).IsUnicode(false);
 
-                entity.Property(e => e.Dst)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dst");
+                entity.Property(e => e.Src).IsUnicode(false);
 
-                entity.Property(e => e.Dstchannel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dstchannel");
+                entity.Property(e => e.Uniqueid).IsUnicode(false);
 
-                entity.Property(e => e.Duration).HasColumnName("duration");
-
-                entity.Property(e => e.End)
-                    .HasColumnType("datetime")
-                    .HasColumnName("end");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(212)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Lastapp)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastapp");
-
-                entity.Property(e => e.Lastdata)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastdata");
-
-                entity.Property(e => e.Phn)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("PHN");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(30)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Projectgroup)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROJECTGROUP");
-
-                entity.Property(e => e.Src)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("src");
-
-                entity.Property(e => e.Start)
-                    .HasColumnType("datetime")
-                    .HasColumnName("start");
-
-                entity.Property(e => e.Uniqueid)
-                    .HasMaxLength(150)
-                    .IsUnicode(false)
-                    .HasColumnName("uniqueid");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCdr>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CDR");
 
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("accountcode");
+                entity.Property(e => e.Accountcode).IsUnicode(false);
 
-                entity.Property(e => e.Amaflags)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("amaflags");
+                entity.Property(e => e.Amaflags).IsUnicode(false);
 
-                entity.Property(e => e.Answer)
-                    .HasColumnType("datetime")
-                    .HasColumnName("answer");
+                entity.Property(e => e.Channel).IsUnicode(false);
 
-                entity.Property(e => e.Billsec).HasColumnName("billsec");
+                entity.Property(e => e.Clid).IsUnicode(false);
 
-                entity.Property(e => e.Calldate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("calldate");
+                entity.Property(e => e.Dcontext).IsUnicode(false);
 
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
+                entity.Property(e => e.Disposition).IsUnicode(false);
 
-                entity.Property(e => e.Callerid)
-                    .HasMaxLength(30)
-                    .HasColumnName("callerid");
+                entity.Property(e => e.Dst).IsUnicode(false);
 
-                entity.Property(e => e.Channel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("channel");
+                entity.Property(e => e.Dstchannel).IsUnicode(false);
 
-                entity.Property(e => e.Clid)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("clid");
+                entity.Property(e => e.Exten).IsUnicode(false);
 
-                entity.Property(e => e.Dcontext)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dcontext");
+                entity.Property(e => e.Lastapp).IsUnicode(false);
 
-                entity.Property(e => e.Disposition)
-                    .HasMaxLength(45)
-                    .IsUnicode(false)
-                    .HasColumnName("disposition");
+                entity.Property(e => e.Lastdata).IsUnicode(false);
 
-                entity.Property(e => e.Dst)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dst");
+                entity.Property(e => e.Peername).IsUnicode(false);
 
-                entity.Property(e => e.Dstchannel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dstchannel");
+                entity.Property(e => e.Src).IsUnicode(false);
 
-                entity.Property(e => e.Duration).HasColumnName("duration");
+                entity.Property(e => e.Uniqueid).IsUnicode(false);
 
-                entity.Property(e => e.End)
-                    .HasColumnType("datetime")
-                    .HasColumnName("end");
-
-                entity.Property(e => e.Exten)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("exten");
-
-                entity.Property(e => e.Lastapp)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastapp");
-
-                entity.Property(e => e.Lastdata)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastdata");
-
-                entity.Property(e => e.Peername)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("peername");
-
-                entity.Property(e => e.Src)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("src");
-
-                entity.Property(e => e.Start)
-                    .HasColumnType("datetime")
-                    .HasColumnName("start");
-
-                entity.Property(e => e.Tdate)
-                    .HasColumnType("date")
-                    .HasColumnName("tdate");
-
-                entity.Property(e => e.Uniqueid)
-                    .HasMaxLength(150)
-                    .IsUnicode(false)
-                    .HasColumnName("uniqueid");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntCdrReport>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_CDR_REPORT");
 
-                entity.Property(e => e.Answer)
-                    .HasColumnType("datetime")
-                    .HasColumnName("answer");
+                entity.Property(e => e.Cdayname).IsUnicode(false);
 
-                entity.Property(e => e.Billsec).HasColumnName("billsec");
+                entity.Property(e => e.Cmonthname).IsUnicode(false);
 
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
+                entity.Property(e => e.Disposition).IsUnicode(false);
 
-                entity.Property(e => e.Campaign)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGN");
+                entity.Property(e => e.Exten).IsUnicode(false);
 
-                entity.Property(e => e.Cdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CDATE");
+                entity.Property(e => e.Peername).IsUnicode(false);
 
-                entity.Property(e => e.Cday).HasColumnName("CDAY");
+                entity.Property(e => e.Src).IsUnicode(false);
 
-                entity.Property(e => e.Cdayname)
-                    .HasMaxLength(9)
-                    .IsUnicode(false)
-                    .HasColumnName("CDAYNAME");
+                entity.Property(e => e.Uniqueid).IsUnicode(false);
 
-                entity.Property(e => e.Cdayofyear).HasColumnName("CDAYOFYEAR");
-
-                entity.Property(e => e.Chour).HasColumnName("CHOUR");
-
-                entity.Property(e => e.Cminute).HasColumnName("CMINUTE");
-
-                entity.Property(e => e.Cmonth).HasColumnName("CMONTH");
-
-                entity.Property(e => e.Cmonthname)
-                    .HasMaxLength(7)
-                    .IsUnicode(false)
-                    .HasColumnName("CMONTHNAME");
-
-                entity.Property(e => e.Cweek).HasColumnName("CWEEK");
-
-                entity.Property(e => e.Cweekday).HasColumnName("CWEEKDAY");
-
-                entity.Property(e => e.Cyear).HasColumnName("CYEAR");
-
-                entity.Property(e => e.Dayofweek).HasColumnName("DAYOFWEEK");
-
-                entity.Property(e => e.Disposition)
-                    .HasMaxLength(45)
-                    .IsUnicode(false)
-                    .HasColumnName("disposition");
-
-                entity.Property(e => e.Duration).HasColumnName("duration");
-
-                entity.Property(e => e.End)
-                    .HasColumnType("datetime")
-                    .HasColumnName("end");
-
-                entity.Property(e => e.Exten)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("exten");
-
-                entity.Property(e => e.Isoutbound).HasColumnName("ISOUTBOUND");
-
-                entity.Property(e => e.Peername)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("PEERNAME");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Personname)
-                    .HasMaxLength(212)
-                    .HasColumnName("PERSONNAME");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(200)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Projectname)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROJECTNAME");
-
-                entity.Property(e => e.Src)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("src");
-
-                entity.Property(e => e.Start)
-                    .HasColumnType("datetime")
-                    .HasColumnName("start");
-
-                entity.Property(e => e.Uniqueid)
-                    .HasMaxLength(150)
-                    .IsUnicode(false)
-                    .HasColumnName("uniqueid");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntDbs>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_DBS");
-
-                entity.Property(e => e.CdrTds).HasColumnName("cdr_tds");
-
-                entity.Property(e => e.Databasename)
-                    .HasMaxLength(50)
-                    .HasColumnName("DATABASENAME");
-
-                entity.Property(e => e.Denifition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DENIFITION");
-
-                entity.Property(e => e.Extensions).HasColumnName("extensions");
-
-                entity.Property(e => e.ExtraParams).HasColumnName("EXTRA_PARAMS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Ipaddress)
-                    .HasMaxLength(30)
-                    .HasColumnName("IPADDRESS");
-
-                entity.Property(e => e.Pass)
-                    .HasMaxLength(30)
-                    .HasColumnName("PASS");
-
-                entity.Property(e => e.Port).HasColumnName("PORT");
-
-                entity.Property(e => e.QueueLog).HasColumnName("queue_log");
-
-                entity.Property(e => e.QueueMembers).HasColumnName("queue_members");
-
-                entity.Property(e => e.Queues).HasColumnName("queues");
-
-                entity.Property(e => e.Sippeers).HasColumnName("sippeers");
-
-                entity.Property(e => e.Sipregs).HasColumnName("sipregs");
-
-                entity.Property(e => e.Swid).HasColumnName("SWID");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(15)
-                    .HasColumnName("TYPE");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(30)
-                    .HasColumnName("USERNAME");
             });
 
             modelBuilder.Entity<SntDiagram>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_DIAGRAM");
-
-                entity.Property(e => e.Connectors).HasColumnName("connectors");
-
-                entity.Property(e => e.DataKey).HasColumnName("dataKey");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(40)
-                    .HasColumnName("description");
-
-                entity.Property(e => e.Isactive).HasColumnName("isactive");
-
-                entity.Property(e => e.Page).HasColumnName("page");
-
-                entity.Property(e => e.Shapes).HasColumnName("shapes");
             });
 
             modelBuilder.Entity<SntDiagramChildkeys>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_DIAGRAM_CHILDKEYS");
 
-                entity.Property(e => e.DataKey).HasColumnName("dataKey");
-
-                entity.Property(e => e.Key)
-                    .HasMaxLength(15)
-                    .IsUnicode(false)
-                    .HasColumnName("key");
+                entity.Property(e => e.Key).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntDiagramShapes>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_DIAGRAM_SHAPES");
 
-                entity.Property(e => e.DataKey).HasColumnName("dataKey");
-
-                entity.Property(e => e.DiagramKey).HasColumnName("diagramKey");
-
-                entity.Property(e => e.HeadId).HasColumnName("Head_ID");
-
-                entity.Property(e => e.Height).HasColumnName("height");
-
-                entity.Property(e => e.Key)
-                    .HasMaxLength(15)
-                    .IsUnicode(false)
-                    .HasColumnName("key");
-
-                entity.Property(e => e.Locked).HasColumnName("locked");
-
-                entity.Property(e => e.SortIndex).HasColumnName("sortIndex");
-
-                entity.Property(e => e.TargetContainerId).HasColumnName("targetContainerId");
-
-                entity.Property(e => e.TargetId).HasColumnName("targetId");
-
-                entity.Property(e => e.Text)
-                    .HasMaxLength(254)
-                    .HasColumnName("text");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(200)
-                    .HasColumnName("type");
-
-                entity.Property(e => e.Width).HasColumnName("width");
-
-                entity.Property(e => e.X).HasColumnName("x");
-
-                entity.Property(e => e.Y).HasColumnName("y");
-
-                entity.Property(e => e.ZIndex).HasColumnName("zIndex");
+                entity.Property(e => e.Key).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntDialPlan>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_DIAL_PLAN");
-
-                entity.Property(e => e.App)
-                    .HasMaxLength(100)
-                    .HasColumnName("APP");
-
-                entity.Property(e => e.Appdata)
-                    .HasMaxLength(250)
-                    .HasColumnName("APPDATA");
-
-                entity.Property(e => e.Groupname)
-                    .HasMaxLength(150)
-                    .HasColumnName("GROUPNAME");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Parentid).HasColumnName("PARENTID");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Swid).HasColumnName("SWID");
             });
 
             modelBuilder.Entity<SntLanguageCountries>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_LANGUAGE_COUNTRIES");
 
                 entity.Property(e => e.Countrycode)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("COUNTRYCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Langcode)
-                    .HasMaxLength(5)
-                    .HasColumnName("LANGCODE");
             });
 
             modelBuilder.Entity<SntMissedcalls>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_MISSEDCALLS");
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("agent");
-
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Event)
-                    .HasMaxLength(32)
-                    .HasColumnName("event");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
+                entity.Property(e => e.Agent).IsUnicode(false);
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
 
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
+                entity.Property(e => e.Name).IsUnicode(false);
 
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phone)
-                    .HasMaxLength(255)
-                    .HasColumnName("PHONE");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queueid).HasColumnName("QUEUEID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("QUEUENAME");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Sortfld)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SORTFLD");
-
-                entity.Property(e => e.State)
-                    .HasMaxLength(25)
-                    .HasColumnName("STATE");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
+                entity.Property(e => e.Queuename).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntMissedcallsAll>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_MISSEDCALLS_ALL");
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("agent");
-
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Event)
-                    .HasMaxLength(32)
-                    .HasColumnName("event");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
+                entity.Property(e => e.Agent).IsUnicode(false);
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
 
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
+                entity.Property(e => e.Name).IsUnicode(false);
 
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
+                entity.Property(e => e.Queuename).IsUnicode(false);
 
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Phone)
-                    .HasMaxLength(255)
-                    .HasColumnName("PHONE");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.Qaid).HasColumnName("QAID");
-
-                entity.Property(e => e.Queueid).HasColumnName("QUEUEID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("QUEUENAME");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Sortfld)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SORTFLD");
-
-                entity.Property(e => e.State)
-                    .HasMaxLength(25)
-                    .HasColumnName("STATE");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntQueueAbandon>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_QUEUE_ABANDON");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.IncHour).HasColumnName("INC_HOUR");
-
-                entity.Property(e => e.MaxHour).HasColumnName("MAX_HOUR");
-
-                entity.Property(e => e.MaxMin).HasColumnName("MAX_MIN");
-
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
-
-                entity.Property(e => e.MaxtrycountForbusy).HasColumnName("MAXTRYCOUNT_FORBUSY");
-
-                entity.Property(e => e.Queueid).HasColumnName("QUEUEID");
-
-                entity.Property(e => e.Try1minutelater).HasColumnName("TRY1MINUTELATER");
-
-                entity.Property(e => e.Try1minutelaterForbusy).HasColumnName("TRY1MINUTELATER_FORBUSY");
-
-                entity.Property(e => e.Try2minutelater).HasColumnName("TRY2MINUTELATER");
-
-                entity.Property(e => e.Try2minutelaterForbusy).HasColumnName("TRY2MINUTELATER_FORBUSY");
-
-                entity.Property(e => e.Try3minutelater).HasColumnName("TRY3MINUTELATER");
-
-                entity.Property(e => e.Try3minutelaterForbusy).HasColumnName("TRY3MINUTELATER_FORBUSY");
-
-                entity.Property(e => e.Try4minutelater).HasColumnName("TRY4MINUTELATER");
-
-                entity.Property(e => e.Try4minutelaterForbusy).HasColumnName("TRY4MINUTELATER_FORBUSY");
-
-                entity.Property(e => e.Try5minutelater).HasColumnName("TRY5MINUTELATER");
-
-                entity.Property(e => e.Try5minutelaterForbusy).HasColumnName("TRY5MINUTELATER_FORBUSY");
-
-                entity.Property(e => e.WeekendIncHour).HasColumnName("WEEKEND_INC_HOUR");
-
-                entity.Property(e => e.WeekendMaxHour).HasColumnName("WEEKEND_MAX_HOUR");
-
-                entity.Property(e => e.WeekendMaxMin).HasColumnName("WEEKEND_MAX_MIN");
             });
 
             modelBuilder.Entity<SntQueueLog>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_QUEUE_LOG");
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(32)
-                    .HasColumnName("agent");
-
-                entity.Property(e => e.Callid)
-                    .HasMaxLength(32)
-                    .HasColumnName("callid");
-
-                entity.Property(e => e.Data)
-                    .HasMaxLength(255)
-                    .HasColumnName("data");
-
-                entity.Property(e => e.Data1)
-                    .HasMaxLength(255)
-                    .HasColumnName("data1");
-
-                entity.Property(e => e.Data2)
-                    .HasMaxLength(255)
-                    .HasColumnName("data2");
-
-                entity.Property(e => e.Data3)
-                    .HasMaxLength(255)
-                    .HasColumnName("data3");
-
-                entity.Property(e => e.Data4)
-                    .HasMaxLength(255)
-                    .HasColumnName("data4");
-
-                entity.Property(e => e.Data5)
-                    .HasMaxLength(255)
-                    .HasColumnName("data5");
-
-                entity.Property(e => e.Event)
-                    .HasMaxLength(32)
-                    .HasColumnName("event");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("id");
-
-                entity.Property(e => e.Logdate)
-                    .HasColumnType("date")
-                    .HasColumnName("logdate");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(32)
-                    .HasColumnName("queuename");
-
-                entity.Property(e => e.Time).HasColumnName("time");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<SntQueueMembers>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_QUEUE_MEMBERS");
 
-                entity.Property(e => e.Interface)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("interface");
+                entity.Property(e => e.Interface).IsUnicode(false);
 
-                entity.Property(e => e.Membername)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("membername");
+                entity.Property(e => e.Membername).IsUnicode(false);
 
-                entity.Property(e => e.Paused).HasColumnName("paused");
+                entity.Property(e => e.QueueName).IsUnicode(false);
 
-                entity.Property(e => e.Penalty).HasColumnName("penalty");
-
-                entity.Property(e => e.QueueName)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_name");
-
-                entity.Property(e => e.Queueid).HasColumnName("queueid");
-
-                entity.Property(e => e.Uniqueid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("uniqueid");
+                entity.Property(e => e.Uniqueid).ValueGeneratedOnAdd();
             });
 
             modelBuilder.Entity<SntQueues>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_QUEUES");
 
-                entity.Property(e => e.AbandoncallbackExten).HasColumnName("abandoncallback_exten");
+                entity.Property(e => e.Announce).IsUnicode(false);
 
-                entity.Property(e => e.Announce)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("announce");
+                entity.Property(e => e.AnnounceHoldtime).IsUnicode(false);
 
-                entity.Property(e => e.AnnounceFrequency).HasColumnName("announce_frequency");
+                entity.Property(e => e.Context).IsUnicode(false);
 
-                entity.Property(e => e.AnnounceHoldtime)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("announce_holdtime");
+                entity.Property(e => e.Joinempty).IsUnicode(false);
 
-                entity.Property(e => e.AnnounceRoundSeconds).HasColumnName("announce_round_seconds");
+                entity.Property(e => e.Leavewhenempty).IsUnicode(false);
 
-                entity.Property(e => e.Autofill)
-                    .HasMaxLength(15)
-                    .HasColumnName("autofill");
+                entity.Property(e => e.MonitorFormat).IsUnicode(false);
 
-                entity.Property(e => e.Autopause)
-                    .HasMaxLength(15)
-                    .HasColumnName("autopause");
+                entity.Property(e => e.Musiconhold).IsUnicode(false);
 
-                entity.Property(e => e.Context)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("context");
+                entity.Property(e => e.Name).IsUnicode(false);
 
-                entity.Property(e => e.Corpid).HasColumnName("corpid");
+                entity.Property(e => e.PeriodicAnnounce).IsUnicode(false);
 
-                entity.Property(e => e.Eventmemberstatus).HasColumnName("eventmemberstatus");
+                entity.Property(e => e.QueueCallswaiting).IsUnicode(false);
 
-                entity.Property(e => e.Eventwhencalled).HasColumnName("eventwhencalled");
+                entity.Property(e => e.QueueHoldtime).IsUnicode(false);
 
-                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.QueueLessthan).IsUnicode(false);
 
-                entity.Property(e => e.Isdisabled).HasColumnName("isdisabled");
+                entity.Property(e => e.QueueMinutes).IsUnicode(false);
 
-                entity.Property(e => e.Jobend).HasColumnName("jobend");
+                entity.Property(e => e.QueueReporthold).IsUnicode(false);
 
-                entity.Property(e => e.Jobstart).HasColumnName("jobstart");
+                entity.Property(e => e.QueueSeconds).IsUnicode(false);
 
-                entity.Property(e => e.Joinempty)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("joinempty");
+                entity.Property(e => e.QueueThankyou).IsUnicode(false);
 
-                entity.Property(e => e.Leavewhenempty)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("leavewhenempty");
+                entity.Property(e => e.QueueThereare).IsUnicode(false);
 
-                entity.Property(e => e.Maxlen).HasColumnName("maxlen");
+                entity.Property(e => e.QueueYouarenext).IsUnicode(false);
 
-                entity.Property(e => e.Memberdelay).HasColumnName("memberdelay");
-
-                entity.Property(e => e.MonitorFormat)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("monitor_format");
-
-                entity.Property(e => e.MonitorJoin).HasColumnName("monitor_join");
-
-                entity.Property(e => e.Musiconhold)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("musiconhold");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.PeriodicAnnounce)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("periodic_announce");
-
-                entity.Property(e => e.PeriodicAnnounceFrequency).HasColumnName("periodic_announce_frequency");
-
-                entity.Property(e => e.QueueCallswaiting)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_callswaiting");
-
-                entity.Property(e => e.QueueHoldtime)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_holdtime");
-
-                entity.Property(e => e.QueueLessthan)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_lessthan");
-
-                entity.Property(e => e.QueueMinutes)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_minutes");
-
-                entity.Property(e => e.QueueReporthold)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_reporthold");
-
-                entity.Property(e => e.QueueSeconds)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_seconds");
-
-                entity.Property(e => e.QueueThankyou)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_thankyou");
-
-                entity.Property(e => e.QueueThereare)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_thereare");
-
-                entity.Property(e => e.QueueYouarenext)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("queue_youarenext");
-
-                entity.Property(e => e.Reportholdtime).HasColumnName("reportholdtime");
-
-                entity.Property(e => e.Retry).HasColumnName("retry");
-
-                entity.Property(e => e.Ringinuse).HasColumnName("ringinuse");
-
-                entity.Property(e => e.Servicelevel).HasColumnName("servicelevel");
-
-                entity.Property(e => e.Setinterfacevar).HasColumnName("setinterfacevar");
-
-                entity.Property(e => e.Strategy)
-                    .HasMaxLength(128)
-                    .IsUnicode(false)
-                    .HasColumnName("strategy");
-
-                entity.Property(e => e.Swid).HasColumnName("swid");
-
-                entity.Property(e => e.Timeout).HasColumnName("timeout");
-
-                entity.Property(e => e.Timeoutrestart).HasColumnName("timeoutrestart");
-
-                entity.Property(e => e.Weight).HasColumnName("weight");
-
-                entity.Property(e => e.Wrapuptime).HasColumnName("wrapuptime");
+                entity.Property(e => e.Strategy).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntReport>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_REPORT");
 
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("accountcode");
+                entity.Property(e => e.Accountcode).IsUnicode(false);
 
-                entity.Property(e => e.Agent)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("agent");
+                entity.Property(e => e.Agent).IsUnicode(false);
 
-                entity.Property(e => e.Amaflags)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("amaflags");
+                entity.Property(e => e.Amaflags).IsUnicode(false);
 
-                entity.Property(e => e.Answer)
-                    .HasColumnType("datetime")
-                    .HasColumnName("answer");
+                entity.Property(e => e.Cdayname).IsUnicode(false);
 
-                entity.Property(e => e.Billsec).HasColumnName("billsec");
+                entity.Property(e => e.Channel).IsUnicode(false);
 
-                entity.Property(e => e.Calldate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("calldate");
+                entity.Property(e => e.Clid).IsUnicode(false);
 
-                entity.Property(e => e.Callednumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("callednumber");
+                entity.Property(e => e.Cmonthname).IsUnicode(false);
 
-                entity.Property(e => e.Callerid)
-                    .HasMaxLength(30)
-                    .HasColumnName("callerid");
+                entity.Property(e => e.Dcontext).IsUnicode(false);
 
-                entity.Property(e => e.Campaign)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGN");
+                entity.Property(e => e.Disposition).IsUnicode(false);
 
-                entity.Property(e => e.Cday).HasColumnName("CDAY");
+                entity.Property(e => e.Dst).IsUnicode(false);
 
-                entity.Property(e => e.Cdayname)
-                    .HasMaxLength(9)
-                    .IsUnicode(false)
-                    .HasColumnName("CDAYNAME");
+                entity.Property(e => e.Dstchannel).IsUnicode(false);
 
-                entity.Property(e => e.Cdayofyear).HasColumnName("CDAYOFYEAR");
+                entity.Property(e => e.Exten).IsUnicode(false);
 
-                entity.Property(e => e.Channel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("channel");
+                entity.Property(e => e.Fromuser).IsUnicode(false);
 
-                entity.Property(e => e.Chour).HasColumnName("CHOUR");
+                entity.Property(e => e.Hat).IsUnicode(false);
 
-                entity.Property(e => e.Clid)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("clid");
+                entity.Property(e => e.Lastapp).IsUnicode(false);
 
-                entity.Property(e => e.Cminute).HasColumnName("CMINUTE");
+                entity.Property(e => e.Lastdata).IsUnicode(false);
 
-                entity.Property(e => e.Cmonth).HasColumnName("CMONTH");
+                entity.Property(e => e.Peername).IsUnicode(false);
 
-                entity.Property(e => e.Cmonthname)
-                    .HasMaxLength(7)
-                    .IsUnicode(false)
-                    .HasColumnName("CMONTHNAME");
+                entity.Property(e => e.Src).IsUnicode(false);
 
-                entity.Property(e => e.Cweek).HasColumnName("CWEEK");
+                entity.Property(e => e.Uniqueid).IsUnicode(false);
 
-                entity.Property(e => e.Cweekday).HasColumnName("CWEEKDAY");
-
-                entity.Property(e => e.Cyear).HasColumnName("CYEAR");
-
-                entity.Property(e => e.Dayofweek).HasColumnName("DAYOFWEEK");
-
-                entity.Property(e => e.Dcontext)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dcontext");
-
-                entity.Property(e => e.Disposition)
-                    .HasMaxLength(45)
-                    .IsUnicode(false)
-                    .HasColumnName("disposition");
-
-                entity.Property(e => e.Dst)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dst");
-
-                entity.Property(e => e.Dstchannel)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("dstchannel");
-
-                entity.Property(e => e.Duration).HasColumnName("duration");
-
-                entity.Property(e => e.End)
-                    .HasColumnType("datetime")
-                    .HasColumnName("end");
-
-                entity.Property(e => e.Event)
-                    .HasMaxLength(32)
-                    .HasColumnName("event");
-
-                entity.Property(e => e.Exten)
-                    .HasMaxLength(50)
-                    .IsUnicode(false)
-                    .HasColumnName("exten");
-
-                entity.Property(e => e.Fromuser)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fromuser");
-
-                entity.Property(e => e.Hat)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("HAT");
-
-                entity.Property(e => e.Isoutbound).HasColumnName("ISOUTBOUND");
-
-                entity.Property(e => e.Istransfer).HasColumnName("ISTRANSFER");
-
-                entity.Property(e => e.Lastapp)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastapp");
-
-                entity.Property(e => e.Lastdata)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("lastdata");
-
-                entity.Property(e => e.Peername)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("peername");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(250)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Projectname)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROJECTNAME");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("queuelogid");
-
-                entity.Property(e => e.Queuename)
-                    .HasMaxLength(32)
-                    .HasColumnName("queuename");
-
-                entity.Property(e => e.Src)
-                    .HasMaxLength(80)
-                    .IsUnicode(false)
-                    .HasColumnName("src");
-
-                entity.Property(e => e.Start)
-                    .HasColumnType("datetime")
-                    .HasColumnName("start");
-
-                entity.Property(e => e.Summaryfield).HasColumnName("SUMMARYFIELD");
-
-                entity.Property(e => e.Swid).HasColumnName("SWID");
-
-                entity.Property(e => e.Tdate)
-                    .HasColumnType("date")
-                    .HasColumnName("tdate");
-
-                entity.Property(e => e.Uniqueid)
-                    .HasMaxLength(150)
-                    .IsUnicode(false)
-                    .HasColumnName("uniqueid");
-
-                entity.Property(e => e.Userfield)
-                    .HasMaxLength(255)
-                    .IsUnicode(false)
-                    .HasColumnName("userfield");
+                entity.Property(e => e.Userfield).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntRtSippeers>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_RT_SIPPEERS");
 
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("accountcode");
-
-                entity.Property(e => e.Allow)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("allow");
-
-                entity.Property(e => e.Allowoverlap)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowoverlap");
-
-                entity.Property(e => e.Allowsubscribe)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowsubscribe");
-
-                entity.Property(e => e.Allowtransfer)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowtransfer");
-
-                entity.Property(e => e.Amaflags)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("amaflags");
-
-                entity.Property(e => e.Auth)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("auth");
-
-                entity.Property(e => e.Autoframing)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("autoframing");
-
-                entity.Property(e => e.Buggymwi)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("buggymwi");
-
-                entity.Property(e => e.Busylevel).HasColumnName("busylevel");
-
-                entity.Property(e => e.CallLimit).HasColumnName("call-limit");
-
-                entity.Property(e => e.Callbackextension)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callbackextension");
-
-                entity.Property(e => e.Callcounter)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("callcounter");
-
-                entity.Property(e => e.Callerid)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callerid");
-
-                entity.Property(e => e.Callgroup)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callgroup");
-
-                entity.Property(e => e.Callingpres)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("callingpres");
-
-                entity.Property(e => e.CidNumber)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("cid_number");
-
-                entity.Property(e => e.Constantssrc)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("constantssrc");
-
-                entity.Property(e => e.Contactdeny)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("contactdeny");
-
-                entity.Property(e => e.Contactpermit)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("contactpermit");
-
-                entity.Property(e => e.Context)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("context");
-
-                entity.Property(e => e.Corpid).HasColumnName("corpid");
-
-                entity.Property(e => e.Defaultip)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("defaultip");
-
-                entity.Property(e => e.Defaultuser)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("defaultuser");
-
-                entity.Property(e => e.Deny)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("deny");
-
-                entity.Property(e => e.Directmedia)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("directmedia");
-
-                entity.Property(e => e.Disallow)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("disallow");
-
-                entity.Property(e => e.Dtmfmode)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("dtmfmode");
-
-                entity.Property(e => e.Dynamic)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("dynamic");
-
-                entity.Property(e => e.Extension)
-                    .HasMaxLength(50)
-                    .HasColumnName("extension");
-
-                entity.Property(e => e.Faxdetect)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("faxdetect");
-
-                entity.Property(e => e.Fromdomain)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fromdomain");
-
-                entity.Property(e => e.Fromuser)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fromuser");
-
-                entity.Property(e => e.Fullcontact)
-                    .HasMaxLength(135)
-                    .IsUnicode(false)
-                    .HasColumnName("fullcontact");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fullname");
-
-                entity.Property(e => e.G726nonstandard)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("g726nonstandard");
-
-                entity.Property(e => e.Hasvoicemail)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("hasvoicemail");
-
-                entity.Property(e => e.Host)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("host");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("id");
-
-                entity.Property(e => e.Ignoresdpversion)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("ignoresdpversion");
-
-                entity.Property(e => e.Insecure)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("insecure");
-
-                entity.Property(e => e.Ipaddr)
-                    .HasMaxLength(15)
-                    .IsUnicode(false)
-                    .HasColumnName("ipaddr");
-
-                entity.Property(e => e.Language)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("language");
-
-                entity.Property(e => e.Lastms).HasColumnName("lastms");
-
-                entity.Property(e => e.Mailbox)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mailbox");
-
-                entity.Property(e => e.Maxcallbitrate).HasColumnName("maxcallbitrate");
-
-                entity.Property(e => e.Md5secret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("md5secret");
-
-                entity.Property(e => e.Mohinterpret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mohinterpret");
-
-                entity.Property(e => e.Mohsuggest)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mohsuggest");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.Nat)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("nat");
-
-                entity.Property(e => e.Outboundproxy)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("outboundproxy");
-
-                entity.Property(e => e.Parkinglot)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("parkinglot");
-
-                entity.Property(e => e.Permit)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("permit");
-
-                entity.Property(e => e.Pickupgroup)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("pickupgroup");
-
-                entity.Property(e => e.Port).HasColumnName("port");
-
-                entity.Property(e => e.Progressinband)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("progressinband");
-
-                entity.Property(e => e.Promiscredir)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("promiscredir");
-
-                entity.Property(e => e.Qualify)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("qualify");
-
-                entity.Property(e => e.Qualifyfreq).HasColumnName("qualifyfreq");
-
-                entity.Property(e => e.Regexten)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("regexten");
-
-                entity.Property(e => e.Regseconds).HasColumnName("regseconds");
-
-                entity.Property(e => e.Regserver)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("regserver");
-
-                entity.Property(e => e.Remotesecret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("remotesecret");
-
-                entity.Property(e => e.Rfc2833compensate)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("rfc2833compensate");
-
-                entity.Property(e => e.Rtpholdtimeout).HasColumnName("rtpholdtimeout");
-
-                entity.Property(e => e.Rtpkeepalive).HasColumnName("rtpkeepalive");
-
-                entity.Property(e => e.Rtptimeout).HasColumnName("rtptimeout");
-
-                entity.Property(e => e.Secret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("secret");
-
-                entity.Property(e => e.Sendrpid)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("sendrpid");
-
-                entity.Property(e => e.SessionExpires).HasColumnName("session-expires");
-
-                entity.Property(e => e.SessionMinse).HasColumnName("session-minse");
-
-                entity.Property(e => e.SessionRefresher)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("session-refresher");
-
-                entity.Property(e => e.SessionTimers)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("session-timers");
-
-                entity.Property(e => e.Setvar)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("setvar");
-
-                entity.Property(e => e.Subscribemwi)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("subscribemwi");
-
-                entity.Property(e => e.Swid).HasColumnName("swid");
-
-                entity.Property(e => e.T38ptUsertpsource)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("t38pt_usertpsource");
-
-                entity.Property(e => e.Textsupport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("textsupport");
-
-                entity.Property(e => e.Timerb).HasColumnName("timerb");
-
-                entity.Property(e => e.Timert1).HasColumnName("timert1");
-
-                entity.Property(e => e.Transport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("transport");
-
-                entity.Property(e => e.Trunkname)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("trunkname");
-
-                entity.Property(e => e.Trustrpid)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("trustrpid");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("type");
-
-                entity.Property(e => e.Uid).HasColumnName("uid");
-
-                entity.Property(e => e.Useclientcode)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("useclientcode");
-
-                entity.Property(e => e.Useragent)
-                    .HasMaxLength(200)
-                    .IsUnicode(false)
-                    .HasColumnName("useragent");
-
-                entity.Property(e => e.Usereqphone)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("usereqphone");
-
-                entity.Property(e => e.Videosupport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("videosupport");
-
-                entity.Property(e => e.Vmexten)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("vmexten");
+                entity.Property(e => e.Accountcode).IsUnicode(false);
+
+                entity.Property(e => e.Allow).IsUnicode(false);
+
+                entity.Property(e => e.Allowoverlap).IsUnicode(false);
+
+                entity.Property(e => e.Allowsubscribe).IsUnicode(false);
+
+                entity.Property(e => e.Allowtransfer).IsUnicode(false);
+
+                entity.Property(e => e.Amaflags).IsUnicode(false);
+
+                entity.Property(e => e.Auth).IsUnicode(false);
+
+                entity.Property(e => e.Autoframing).IsUnicode(false);
+
+                entity.Property(e => e.Buggymwi).IsUnicode(false);
+
+                entity.Property(e => e.Callbackextension).IsUnicode(false);
+
+                entity.Property(e => e.Callcounter).IsUnicode(false);
+
+                entity.Property(e => e.Callerid).IsUnicode(false);
+
+                entity.Property(e => e.Callgroup).IsUnicode(false);
+
+                entity.Property(e => e.Callingpres).IsUnicode(false);
+
+                entity.Property(e => e.CidNumber).IsUnicode(false);
+
+                entity.Property(e => e.Constantssrc).IsUnicode(false);
+
+                entity.Property(e => e.Contactdeny).IsUnicode(false);
+
+                entity.Property(e => e.Contactpermit).IsUnicode(false);
+
+                entity.Property(e => e.Context).IsUnicode(false);
+
+                entity.Property(e => e.Defaultip).IsUnicode(false);
+
+                entity.Property(e => e.Defaultuser).IsUnicode(false);
+
+                entity.Property(e => e.Deny).IsUnicode(false);
+
+                entity.Property(e => e.Directmedia).IsUnicode(false);
+
+                entity.Property(e => e.Disallow).IsUnicode(false);
+
+                entity.Property(e => e.Dtmfmode).IsUnicode(false);
+
+                entity.Property(e => e.Dynamic).IsUnicode(false);
+
+                entity.Property(e => e.Faxdetect).IsUnicode(false);
+
+                entity.Property(e => e.Fromdomain).IsUnicode(false);
+
+                entity.Property(e => e.Fromuser).IsUnicode(false);
+
+                entity.Property(e => e.Fullcontact).IsUnicode(false);
+
+                entity.Property(e => e.Fullname).IsUnicode(false);
+
+                entity.Property(e => e.G726nonstandard).IsUnicode(false);
+
+                entity.Property(e => e.Hasvoicemail).IsUnicode(false);
+
+                entity.Property(e => e.Host).IsUnicode(false);
+
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Ignoresdpversion).IsUnicode(false);
+
+                entity.Property(e => e.Insecure).IsUnicode(false);
+
+                entity.Property(e => e.Ipaddr).IsUnicode(false);
+
+                entity.Property(e => e.Language).IsUnicode(false);
+
+                entity.Property(e => e.Mailbox).IsUnicode(false);
+
+                entity.Property(e => e.Md5secret).IsUnicode(false);
+
+                entity.Property(e => e.Mohinterpret).IsUnicode(false);
+
+                entity.Property(e => e.Mohsuggest).IsUnicode(false);
+
+                entity.Property(e => e.Name).IsUnicode(false);
+
+                entity.Property(e => e.Nat).IsUnicode(false);
+
+                entity.Property(e => e.Outboundproxy).IsUnicode(false);
+
+                entity.Property(e => e.Parkinglot).IsUnicode(false);
+
+                entity.Property(e => e.Permit).IsUnicode(false);
+
+                entity.Property(e => e.Pickupgroup).IsUnicode(false);
+
+                entity.Property(e => e.Progressinband).IsUnicode(false);
+
+                entity.Property(e => e.Promiscredir).IsUnicode(false);
+
+                entity.Property(e => e.Qualify).IsUnicode(false);
+
+                entity.Property(e => e.Regexten).IsUnicode(false);
+
+                entity.Property(e => e.Regserver).IsUnicode(false);
+
+                entity.Property(e => e.Remotesecret).IsUnicode(false);
+
+                entity.Property(e => e.Rfc2833compensate).IsUnicode(false);
+
+                entity.Property(e => e.Secret).IsUnicode(false);
+
+                entity.Property(e => e.Sendrpid).IsUnicode(false);
+
+                entity.Property(e => e.SessionRefresher).IsUnicode(false);
+
+                entity.Property(e => e.SessionTimers).IsUnicode(false);
+
+                entity.Property(e => e.Setvar).IsUnicode(false);
+
+                entity.Property(e => e.Subscribemwi).IsUnicode(false);
+
+                entity.Property(e => e.T38ptUsertpsource).IsUnicode(false);
+
+                entity.Property(e => e.Textsupport).IsUnicode(false);
+
+                entity.Property(e => e.Transport).IsUnicode(false);
+
+                entity.Property(e => e.Trunkname).IsUnicode(false);
+
+                entity.Property(e => e.Trustrpid).IsUnicode(false);
+
+                entity.Property(e => e.Type).IsUnicode(false);
+
+                entity.Property(e => e.Useclientcode).IsUnicode(false);
+
+                entity.Property(e => e.Useragent).IsUnicode(false);
+
+                entity.Property(e => e.Usereqphone).IsUnicode(false);
+
+                entity.Property(e => e.Videosupport).IsUnicode(false);
+
+                entity.Property(e => e.Vmexten).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntSippeers>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_SIPPEERS");
 
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("accountcode");
-
-                entity.Property(e => e.Allow)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("allow");
-
-                entity.Property(e => e.Allowoverlap)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowoverlap");
-
-                entity.Property(e => e.Allowsubscribe)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowsubscribe");
-
-                entity.Property(e => e.Allowtransfer)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("allowtransfer");
-
-                entity.Property(e => e.Amaflags)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("amaflags");
-
-                entity.Property(e => e.Auth)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("auth");
-
-                entity.Property(e => e.Autoframing)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("autoframing");
-
-                entity.Property(e => e.Buggymwi)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("buggymwi");
-
-                entity.Property(e => e.Busylevel).HasColumnName("busylevel");
-
-                entity.Property(e => e.CallLimit).HasColumnName("call-limit");
-
-                entity.Property(e => e.Callbackextension)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callbackextension");
-
-                entity.Property(e => e.Callcounter)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("callcounter");
-
-                entity.Property(e => e.Callerid)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callerid");
-
-                entity.Property(e => e.Callgroup)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("callgroup");
-
-                entity.Property(e => e.Callingpres)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("callingpres");
-
-                entity.Property(e => e.CidNumber)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("cid_number");
-
-                entity.Property(e => e.Constantssrc)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("constantssrc");
-
-                entity.Property(e => e.Contactdeny)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("contactdeny");
-
-                entity.Property(e => e.Contactpermit)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("contactpermit");
-
-                entity.Property(e => e.Context)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("context");
-
-                entity.Property(e => e.Corpid).HasColumnName("corpid");
-
-                entity.Property(e => e.Defaultip)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("defaultip");
-
-                entity.Property(e => e.Defaultuser)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("defaultuser");
-
-                entity.Property(e => e.Deny)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("deny");
-
-                entity.Property(e => e.Directmedia)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("directmedia");
-
-                entity.Property(e => e.Disallow)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("disallow");
-
-                entity.Property(e => e.Dtmfmode)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("dtmfmode");
-
-                entity.Property(e => e.Dynamic)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("dynamic");
-
-                entity.Property(e => e.Extension)
-                    .HasMaxLength(50)
-                    .HasColumnName("extension");
-
-                entity.Property(e => e.ExtensionsFix).HasColumnName("extensions_fix");
-
-                entity.Property(e => e.ExtensionsOutoundFix).HasColumnName("extensions_outound_fix");
-
-                entity.Property(e => e.Faxdetect)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("faxdetect");
-
-                entity.Property(e => e.Fromdomain)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fromdomain");
-
-                entity.Property(e => e.Fromuser)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fromuser");
-
-                entity.Property(e => e.Fullcontact)
-                    .HasMaxLength(35)
-                    .IsUnicode(false)
-                    .HasColumnName("fullcontact");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("fullname");
-
-                entity.Property(e => e.G726nonstandard)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("g726nonstandard");
-
-                entity.Property(e => e.Hasvoicemail)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("hasvoicemail");
-
-                entity.Property(e => e.Host)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("host");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("id");
-
-                entity.Property(e => e.Ignoresdpversion)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("ignoresdpversion");
-
-                entity.Property(e => e.Insecure)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("insecure");
-
-                entity.Property(e => e.Ipaddr)
-                    .HasMaxLength(15)
-                    .IsUnicode(false)
-                    .HasColumnName("ipaddr");
-
-                entity.Property(e => e.Ispeertopeer).HasColumnName("ispeertopeer");
-
-                entity.Property(e => e.Isregister).HasColumnName("isregister");
-
-                entity.Property(e => e.Language)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("language");
-
-                entity.Property(e => e.Lastms).HasColumnName("lastms");
-
-                entity.Property(e => e.Mailbox)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mailbox");
-
-                entity.Property(e => e.Maxcallbitrate).HasColumnName("maxcallbitrate");
-
-                entity.Property(e => e.Md5secret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("md5secret");
-
-                entity.Property(e => e.Mohinterpret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mohinterpret");
-
-                entity.Property(e => e.Mohsuggest)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("mohsuggest");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("name");
-
-                entity.Property(e => e.Nat)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("nat");
-
-                entity.Property(e => e.OutboundExtension)
-                    .HasMaxLength(50)
-                    .HasColumnName("outbound_extension");
-
-                entity.Property(e => e.Outboundproxy)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("outboundproxy");
-
-                entity.Property(e => e.Parkinglot)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("parkinglot");
-
-                entity.Property(e => e.Permit)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("permit");
-
-                entity.Property(e => e.Pickupgroup)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("pickupgroup");
-
-                entity.Property(e => e.Port).HasColumnName("port");
-
-                entity.Property(e => e.Prefix)
-                    .HasMaxLength(10)
-                    .HasColumnName("prefix");
-
-                entity.Property(e => e.PrefixNational)
-                    .HasMaxLength(10)
-                    .HasColumnName("prefix_national");
-
-                entity.Property(e => e.Progressinband)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("progressinband");
-
-                entity.Property(e => e.Promiscredir)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("promiscredir");
-
-                entity.Property(e => e.Qualify)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("qualify");
-
-                entity.Property(e => e.Qualifyfreq).HasColumnName("qualifyfreq");
-
-                entity.Property(e => e.Regexten)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("regexten");
-
-                entity.Property(e => e.Regseconds).HasColumnName("regseconds");
-
-                entity.Property(e => e.Regserver)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("regserver");
-
-                entity.Property(e => e.Remotesecret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("remotesecret");
-
-                entity.Property(e => e.Rfc2833compensate)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("rfc2833compensate");
-
-                entity.Property(e => e.Rtpholdtimeout).HasColumnName("rtpholdtimeout");
-
-                entity.Property(e => e.Rtpkeepalive).HasColumnName("rtpkeepalive");
-
-                entity.Property(e => e.Rtptimeout).HasColumnName("rtptimeout");
-
-                entity.Property(e => e.Secret)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("secret");
-
-                entity.Property(e => e.Sendrpid)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("sendrpid");
-
-                entity.Property(e => e.SessionExpires).HasColumnName("session-expires");
-
-                entity.Property(e => e.SessionMinse).HasColumnName("session-minse");
-
-                entity.Property(e => e.SessionRefresher)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("session-refresher");
-
-                entity.Property(e => e.SessionTimers)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("session-timers");
-
-                entity.Property(e => e.Setvar)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("setvar");
-
-                entity.Property(e => e.Subscribemwi)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("subscribemwi");
-
-                entity.Property(e => e.Swid).HasColumnName("swid");
-
-                entity.Property(e => e.T38ptUsertpsource)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("t38pt_usertpsource");
-
-                entity.Property(e => e.Textsupport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("textsupport");
-
-                entity.Property(e => e.Timerb).HasColumnName("timerb");
-
-                entity.Property(e => e.Timert1).HasColumnName("timert1");
-
-                entity.Property(e => e.Transport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("transport");
-
-                entity.Property(e => e.Trunkname)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("trunkname");
-
-                entity.Property(e => e.Trustrpid)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("trustrpid");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("type");
-
-                entity.Property(e => e.Uid).HasColumnName("uid");
-
-                entity.Property(e => e.Useclientcode)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("useclientcode");
-
-                entity.Property(e => e.Useragent)
-                    .HasMaxLength(20)
-                    .IsUnicode(false)
-                    .HasColumnName("useragent");
-
-                entity.Property(e => e.Usereqphone)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("usereqphone");
-
-                entity.Property(e => e.Videosupport)
-                    .HasMaxLength(100)
-                    .IsUnicode(false)
-                    .HasColumnName("videosupport");
-
-                entity.Property(e => e.Vmexten)
-                    .HasMaxLength(40)
-                    .IsUnicode(false)
-                    .HasColumnName("vmexten");
+                entity.Property(e => e.Accountcode).IsUnicode(false);
+
+                entity.Property(e => e.Allow).IsUnicode(false);
+
+                entity.Property(e => e.Allowoverlap).IsUnicode(false);
+
+                entity.Property(e => e.Allowsubscribe).IsUnicode(false);
+
+                entity.Property(e => e.Allowtransfer).IsUnicode(false);
+
+                entity.Property(e => e.Amaflags).IsUnicode(false);
+
+                entity.Property(e => e.Auth).IsUnicode(false);
+
+                entity.Property(e => e.Autoframing).IsUnicode(false);
+
+                entity.Property(e => e.Buggymwi).IsUnicode(false);
+
+                entity.Property(e => e.Callbackextension).IsUnicode(false);
+
+                entity.Property(e => e.Callcounter).IsUnicode(false);
+
+                entity.Property(e => e.Callerid).IsUnicode(false);
+
+                entity.Property(e => e.Callgroup).IsUnicode(false);
+
+                entity.Property(e => e.Callingpres).IsUnicode(false);
+
+                entity.Property(e => e.CidNumber).IsUnicode(false);
+
+                entity.Property(e => e.Constantssrc).IsUnicode(false);
+
+                entity.Property(e => e.Contactdeny).IsUnicode(false);
+
+                entity.Property(e => e.Contactpermit).IsUnicode(false);
+
+                entity.Property(e => e.Context).IsUnicode(false);
+
+                entity.Property(e => e.Defaultip).IsUnicode(false);
+
+                entity.Property(e => e.Defaultuser).IsUnicode(false);
+
+                entity.Property(e => e.Deny).IsUnicode(false);
+
+                entity.Property(e => e.Directmedia).IsUnicode(false);
+
+                entity.Property(e => e.Disallow).IsUnicode(false);
+
+                entity.Property(e => e.Dtmfmode).IsUnicode(false);
+
+                entity.Property(e => e.Dynamic).IsUnicode(false);
+
+                entity.Property(e => e.Faxdetect).IsUnicode(false);
+
+                entity.Property(e => e.Fromdomain).IsUnicode(false);
+
+                entity.Property(e => e.Fromuser).IsUnicode(false);
+
+                entity.Property(e => e.Fullcontact).IsUnicode(false);
+
+                entity.Property(e => e.Fullname).IsUnicode(false);
+
+                entity.Property(e => e.G726nonstandard).IsUnicode(false);
+
+                entity.Property(e => e.Hasvoicemail).IsUnicode(false);
+
+                entity.Property(e => e.Host).IsUnicode(false);
+
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
+
+                entity.Property(e => e.Ignoresdpversion).IsUnicode(false);
+
+                entity.Property(e => e.Insecure).IsUnicode(false);
+
+                entity.Property(e => e.Ipaddr).IsUnicode(false);
+
+                entity.Property(e => e.Language).IsUnicode(false);
+
+                entity.Property(e => e.Mailbox).IsUnicode(false);
+
+                entity.Property(e => e.Md5secret).IsUnicode(false);
+
+                entity.Property(e => e.Mohinterpret).IsUnicode(false);
+
+                entity.Property(e => e.Mohsuggest).IsUnicode(false);
+
+                entity.Property(e => e.Name).IsUnicode(false);
+
+                entity.Property(e => e.Nat).IsUnicode(false);
+
+                entity.Property(e => e.Outboundproxy).IsUnicode(false);
+
+                entity.Property(e => e.Parkinglot).IsUnicode(false);
+
+                entity.Property(e => e.Permit).IsUnicode(false);
+
+                entity.Property(e => e.Pickupgroup).IsUnicode(false);
+
+                entity.Property(e => e.Progressinband).IsUnicode(false);
+
+                entity.Property(e => e.Promiscredir).IsUnicode(false);
+
+                entity.Property(e => e.Qualify).IsUnicode(false);
+
+                entity.Property(e => e.Regexten).IsUnicode(false);
+
+                entity.Property(e => e.Regserver).IsUnicode(false);
+
+                entity.Property(e => e.Remotesecret).IsUnicode(false);
+
+                entity.Property(e => e.Rfc2833compensate).IsUnicode(false);
+
+                entity.Property(e => e.Secret).IsUnicode(false);
+
+                entity.Property(e => e.Sendrpid).IsUnicode(false);
+
+                entity.Property(e => e.SessionRefresher).IsUnicode(false);
+
+                entity.Property(e => e.SessionTimers).IsUnicode(false);
+
+                entity.Property(e => e.Setvar).IsUnicode(false);
+
+                entity.Property(e => e.Subscribemwi).IsUnicode(false);
+
+                entity.Property(e => e.T38ptUsertpsource).IsUnicode(false);
+
+                entity.Property(e => e.Textsupport).IsUnicode(false);
+
+                entity.Property(e => e.Transport).IsUnicode(false);
+
+                entity.Property(e => e.Trunkname).IsUnicode(false);
+
+                entity.Property(e => e.Trustrpid).IsUnicode(false);
+
+                entity.Property(e => e.Type).IsUnicode(false);
+
+                entity.Property(e => e.Useclientcode).IsUnicode(false);
+
+                entity.Property(e => e.Useragent).IsUnicode(false);
+
+                entity.Property(e => e.Usereqphone).IsUnicode(false);
+
+                entity.Property(e => e.Videosupport).IsUnicode(false);
+
+                entity.Property(e => e.Vmexten).IsUnicode(false);
             });
 
             modelBuilder.Entity<SntSwitchboard>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("SNT_SWITCHBOARD");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.ExtensionsFix).HasColumnName("EXTENSIONS_FIX");
-
-                entity.Property(e => e.ExtensionsOutboundFix).HasColumnName("EXTENSIONS_OUTBOUND_FIX");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Ipaddress)
-                    .HasMaxLength(30)
-                    .HasColumnName("IPADDRESS");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Pass)
-                    .HasMaxLength(50)
-                    .HasColumnName("PASS");
-
-                entity.Property(e => e.Port).HasColumnName("PORT");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(40)
-                    .HasColumnName("USERNAME");
             });
 
             modelBuilder.Entity<StdParams>(entity =>
             {
-                entity.ToTable("STD_PARAMS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Groupname)
-                    .HasMaxLength(50)
-                    .HasColumnName("GROUPNAME");
-
-                entity.Property(e => e.Paramname)
-                    .HasMaxLength(200)
-                    .HasColumnName("PARAMNAME");
-
-                entity.Property(e => e.Paramvalue)
-                    .HasMaxLength(250)
-                    .HasColumnName("PARAMVALUE");
-
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.StdParams)
                     .HasForeignKey(d => d.Corpid)
@@ -8919,148 +3494,15 @@ namespace Asisia.webapi.Models.Db
             {
                 entity.HasKey(e => e.Boardtype)
                     .HasName("PK__STDBOARD__9CD382A3B16C0FCE");
-
-                entity.ToTable("STDBOARDTYPES");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(10)
-                    .HasColumnName("BOARDTYPE");
             });
 
             modelBuilder.Entity<Stdhotel>(entity =>
             {
-                entity.ToTable("STDHOTEL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Seturid, "IX_STDHOTEL");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => new { e.Isdeleted, e.Isdisabled }, "IX_STDHOTEL_1");
-
-                entity.HasIndex(e => e.Name, "IX_STDHOTEL_2");
-
-                entity.HasIndex(e => e.Name, "IX_STDHOTEL_3");
-
-                entity.HasIndex(e => e.Adddate, "IX_STDHOTEL_4");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Addressid).HasColumnName("ADDRESSID");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Checkintime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CHECKINTIME");
-
-                entity.Property(e => e.Checkouttime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CHECKOUTTIME");
-
-                entity.Property(e => e.Contact)
-                    .HasMaxLength(200)
-                    .HasColumnName("CONTACT");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Factsheeturl)
-                    .HasMaxLength(250)
-                    .HasColumnName("FACTSHEETURL");
-
-                entity.Property(e => e.Factsheeturl2)
-                    .HasMaxLength(250)
-                    .HasColumnName("FACTSHEETURL2");
-
-                entity.Property(e => e.Fax).HasColumnName("FAX");
-
-                entity.Property(e => e.Homepageurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("HOMEPAGEURL");
-
-                entity.Property(e => e.HotelDescription).HasColumnName("HOTEL_DESCRIPTION");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(70)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.RakamId)
-                    .HasMaxLength(15)
-                    .HasColumnName("RAKAM_ID");
-
-                entity.Property(e => e.Seturid).HasColumnName("SETURID");
-
-                entity.Property(e => e.Stars).HasColumnName("STARS");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
-
-                entity.Property(e => e.Templatename)
-                    .HasMaxLength(50)
-                    .HasColumnName("TEMPLATENAME");
-
-                entity.Property(e => e.Thumbnailmaxwidth)
-                    .HasColumnName("THUMBNAILMAXWIDTH")
-                    .HasDefaultValueSql("((110))");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("THUMBNAILURL");
-
-                entity.Property(e => e.Tripadvisorid)
-                    .HasMaxLength(50)
-                    .HasColumnName("TRIPADVISORID");
-
-                entity.Property(e => e.UrlBlogger)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_BLOGGER");
-
-                entity.Property(e => e.UrlFacebook)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_FACEBOOK");
-
-                entity.Property(e => e.UrlFlicker)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_FLICKER");
-
-                entity.Property(e => e.UrlFoursquare)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_FOURSQUARE");
-
-                entity.Property(e => e.UrlGoogleplus)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_GOOGLEPLUS");
-
-                entity.Property(e => e.UrlInstagram)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_INSTAGRAM");
-
-                entity.Property(e => e.UrlVine)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL_VINE");
-
-                entity.Property(e => e.Webaddress)
-                    .HasMaxLength(250)
-                    .HasColumnName("WEBADDRESS");
+                entity.Property(e => e.Thumbnailmaxwidth).HasDefaultValueSql("((110))");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.Stdhotel)
@@ -9091,48 +3533,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDHOTEL__3214EC2639831F6E")
                     .IsClustered(false);
 
-                entity.ToTable("STDHOTEL_ANNOUNCEMENT");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Enddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDDATE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Innerhtml).HasColumnName("INNERHTML");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.Markets).HasColumnName("MARKETS");
-
-                entity.Property(e => e.Startdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTDATE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdhotelAnnouncementAdduserNavigation)
@@ -9153,61 +3556,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelBoardtypes>(entity =>
             {
-                entity.ToTable("STDHOTEL_BOARDTYPES");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(10)
-                    .HasColumnName("BOARDTYPE");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(25)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.EntEtsid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ETSID");
-
-                entity.Property(e => e.EntHotelrunnerid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENT_HOTELRUNNERID");
-
-                entity.Property(e => e.EntIatiid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_IATIID");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntJollytourid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_JOLLYTOURID");
-
-                entity.Property(e => e.EntSednaid)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAID");
-
-                entity.Property(e => e.EntSeturid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURID");
-
-                entity.Property(e => e.EntTatilbudurid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TATILBUDURID");
-
-                entity.Property(e => e.EntTouristicaid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TOURISTICAID");
-
-                entity.Property(e => e.EntTravelclickid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TRAVELCLICKID");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.BoardtypeNavigation)
                     .WithMany(p => p.StdhotelBoardtypes)
@@ -9224,28 +3573,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelDescriptions>(entity =>
             {
-                entity.ToTable("STDHOTEL_DESCRIPTIONS");
-
-                entity.HasIndex(e => e.Uid, "IX_STDHOTEL_DESCRIPTIONS")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Category)
-                    .HasMaxLength(150)
-                    .HasColumnName("CATEGORY");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Season)
-                    .HasMaxLength(10)
-                    .HasColumnName("SEASON");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany(p => p.StdhotelDescriptions)
@@ -9255,31 +3583,13 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelExtras>(entity =>
             {
-                entity.ToTable("STDHOTEL_EXTRAS");
-
-                entity.HasIndex(e => e.Exserviceid, "IX_STDHOTEL_EXTRAS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Exserviceid).HasColumnName("EXSERVICEID");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Price)
-                    .HasColumnName("PRICE")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.Price).HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany(p => p.StdhotelExtras)
@@ -9290,37 +3600,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelFecilities>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("STDHOTEL_FECILITIES");
-
-                entity.Property(e => e.Category)
-                    .HasMaxLength(100)
-                    .HasColumnName("CATEGORY");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Icon)
-                    .HasMaxLength(75)
-                    .HasColumnName("ICON");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Isfree).HasColumnName("ISFREE");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.Seasontype)
-                    .HasMaxLength(10)
-                    .HasColumnName("SEASONTYPE");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany()
@@ -9337,44 +3617,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelImages>(entity =>
             {
-                entity.HasNoKey();
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
-                entity.ToTable("STDHOTEL_IMAGES");
+                entity.Property(e => e.Showinofferform).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Default).HasColumnName("DEFAULT");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.Showinofferform)
-                    .IsRequired()
-                    .HasColumnName("SHOWINOFFERFORM")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Thumbnail)
-                    .HasMaxLength(250)
-                    .HasColumnName("THUMBNAIL");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany()
@@ -9391,62 +3638,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelMarket>(entity =>
             {
-                entity.ToTable("STDHOTEL_MARKET");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC26A7DB71ED")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.EntEtsid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ETSID");
-
-                entity.Property(e => e.EntHotelrunnerid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENT_HOTELRUNNERID");
-
-                entity.Property(e => e.EntIatiid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_IATIID");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntJollytourid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_JOLLYTOURID");
-
-                entity.Property(e => e.EntSednaid)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAID");
-
-                entity.Property(e => e.EntSeturid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURID");
-
-                entity.Property(e => e.EntTatilbudurid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TATILBUDURID");
-
-                entity.Property(e => e.EntTouristicaid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TOURISTICAID");
-
-                entity.Property(e => e.EntTravelclickid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TRAVELCLICKID");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Stdmarketid).HasColumnName("STDMARKETID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany(p => p.StdhotelMarket)
@@ -9462,29 +3654,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelMarketCountry>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("STDHOTEL_MARKET_COUNTRY");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC26E0FACD80")
-                    .IsUnique();
-
-                entity.HasIndex(e => new { e.Countrycode, e.Marketid }, "UQ__STDHOTEL__DF754A0EFCBD2DB3")
-                    .IsUnique();
-
                 entity.Property(e => e.Countrycode)
-                    .HasMaxLength(2)
                     .IsUnicode(false)
-                    .HasColumnName("COUNTRYCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany()
@@ -9501,123 +3675,17 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelPricecondition>(entity =>
             {
-                entity.ToTable("STDHOTEL_PRICECONDITION");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Ratetypeid, e.Boardtypeid, e.Roomtypeid, e.Marketid, e.Curcode }, "IX_STDHOTEL_PRICECONDITION")
-                    .IsUnique();
+                entity.Property(e => e.AdultRate).HasDefaultValueSql("((1))");
 
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC261CABA467")
-                    .IsUnique();
+                entity.Property(e => e.BabyRate1).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AdultRate)
-                    .HasColumnName("ADULT_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.BabyMaxage).HasColumnName("BABY_MAXAGE");
-
-                entity.Property(e => e.BabyRate1)
-                    .HasColumnName("BABY_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Babyamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BABYAMOUNT");
-
-                entity.Property(e => e.BabycountsIncToBeds).HasColumnName("BABYCOUNTS_INC_TO_BEDS");
-
-                entity.Property(e => e.Babyrate).HasColumnName("BABYRATE");
-
-                entity.Property(e => e.Boardtypeid).HasColumnName("BOARDTYPEID");
-
-                entity.Property(e => e.ChdeMaxage).HasColumnName("CHDE_MAXAGE");
-
-                entity.Property(e => e.Chdeamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDEAMOUNT");
-
-                entity.Property(e => e.Chderate).HasColumnName("CHDERATE");
-
-                entity.Property(e => e.ChdyMaxage).HasColumnName("CHDY_MAXAGE");
-
-                entity.Property(e => e.Chdyamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDYAMOUNT");
-
-                entity.Property(e => e.Chdyrate).HasColumnName("CHDYRATE");
-
-                entity.Property(e => e.ChildRate)
-                    .HasColumnName("CHILD_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.ChildRate).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Dblamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("DBLAMOUNT");
-
-                entity.Property(e => e.Dblrate).HasColumnName("DBLRATE");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Maxadultcount).HasColumnName("MAXADULTCOUNT");
-
-                entity.Property(e => e.Maxbabycount).HasColumnName("MAXBABYCOUNT");
-
-                entity.Property(e => e.Maxbedcount).HasColumnName("MAXBEDCOUNT");
-
-                entity.Property(e => e.Maxchildcount).HasColumnName("MAXCHILDCOUNT");
-
-                entity.Property(e => e.Minadultcount).HasColumnName("MINADULTCOUNT");
-
-                entity.Property(e => e.Minbabycount).HasColumnName("MINBABYCOUNT");
-
-                entity.Property(e => e.Minbedcount).HasColumnName("MINBEDCOUNT");
-
-                entity.Property(e => e.Minchildcount).HasColumnName("MINCHILDCOUNT");
-
-                entity.Property(e => e.Quadamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("QUADAMOUNT");
-
-                entity.Property(e => e.Quadrate).HasColumnName("QUADRATE");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.ShareNullmarketToAllmarkets).HasColumnName("SHARE_NULLMARKET_TO_ALLMARKETS");
-
-                entity.Property(e => e.Sngamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGAMOUNT");
-
-                entity.Property(e => e.Sngrate).HasColumnName("SNGRATE");
-
-                entity.Property(e => e.Trpamount)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPAMOUNT");
-
-                entity.Property(e => e.Trprate).HasColumnName("TRPRATE");
-
-                entity.Property(e => e.UseCapacity).HasColumnName("USE_CAPACITY");
-
-                entity.Property(e => e.UseMaxages).HasColumnName("USE_MAXAGES");
 
                 entity.HasOne(d => d.Boardtype)
                     .WithMany(p => p.StdhotelPricecondition)
@@ -9657,43 +3725,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelPriceconditionCalendar>(entity =>
             {
-                entity.ToTable("STDHOTEL_PRICECONDITION_CALENDAR");
-
-                entity.HasIndex(e => new { e.Date, e.Priceconditionid }, "UQ__STDHOTEL__BC35458659EA38AD")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Baserate)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BASERATE");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.FreeSell).HasColumnName("FREE_SELL");
-
-                entity.Property(e => e.MaxLos).HasColumnName("MAX_LOS");
-
-                entity.Property(e => e.MinLos).HasColumnName("MIN_LOS");
-
-                entity.Property(e => e.Priceconditionid).HasColumnName("PRICECONDITIONID");
-
-                entity.Property(e => e.Quota).HasColumnName("QUOTA");
-
-                entity.Property(e => e.ReleaseDay).HasColumnName("RELEASE_DAY");
-
-                entity.Property(e => e.Releasedate)
-                    .HasColumnType("date")
-                    .HasColumnName("RELEASEDATE")
-                    .HasComputedColumnSql("(case when [RELEASE_DAY]>(0) then dateadd(day, -[RELEASE_DAY],[DATE])  end)", true);
-
-                entity.Property(e => e.StopCheckin).HasColumnName("STOP_CHECKIN");
-
-                entity.Property(e => e.StopCheckout).HasColumnName("STOP_CHECKOUT");
-
-                entity.Property(e => e.StopSell).HasColumnName("STOP_SELL");
+                entity.Property(e => e.Releasedate).HasComputedColumnSql("(case when [RELEASE_DAY]>(0) then dateadd(day, -[RELEASE_DAY],[DATE])  end)", true);
 
                 entity.HasOne(d => d.Pricecondition)
                     .WithMany(p => p.StdhotelPriceconditionCalendar)
@@ -9707,31 +3739,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDHOTEL__3214EC269C63FEBC")
                     .IsClustered(false);
 
-                entity.ToTable("STDHOTEL_PRICECONDITION_OCCUPANCY");
-
                 entity.HasIndex(e => new { e.Priceconditionid, e.Adult, e.Chde, e.Chdy, e.Baby, e.Totalchd }, "UQ__STDHOTEL__506C296922C62C78")
                     .IsUnique()
                     .IsClustered();
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.CostpriceRate).HasColumnName("COSTPRICE_RATE");
-
-                entity.Property(e => e.GuestpriceRate).HasColumnName("GUESTPRICE_RATE");
-
-                entity.Property(e => e.Priceconditionid).HasColumnName("PRICECONDITIONID");
-
-                entity.Property(e => e.Totalchd).HasColumnName("TOTALCHD");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Pricecondition)
                     .WithMany(p => p.StdhotelPriceconditionOccupancy)
@@ -9742,100 +3754,13 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecode>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Hotelid, e.Corpid }, "IX_STDHOTEL_RATECODE")
-                    .IsUnique();
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC26D34E1904")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.BabyMaxage).HasColumnName("BABY_MAXAGE");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.ChdeMaxage).HasColumnName("CHDE_MAXAGE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.ChdyMaxage).HasColumnName("CHDY_MAXAGE");
-
-                entity.Property(e => e.Commissionincluded).HasColumnName("COMMISSIONINCLUDED");
-
-                entity.Property(e => e.Commissionpercent).HasColumnName("COMMISSIONPERCENT");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Dbl).HasColumnName("DBL");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Exbed).HasColumnName("EXBED");
-
-                entity.Property(e => e.Firstbaby).HasColumnName("FIRSTBABY");
-
-                entity.Property(e => e.Firstchde).HasColumnName("FIRSTCHDE");
-
-                entity.Property(e => e.Firstchdy).HasColumnName("FIRSTCHDY");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Quad).HasColumnName("QUAD");
-
-                entity.Property(e => e.Sng).HasColumnName("SNG");
-
-                entity.Property(e => e.Sngbaby).HasColumnName("SNGBABY");
-
-                entity.Property(e => e.Sngchde).HasColumnName("SNGCHDE");
-
-                entity.Property(e => e.Sngchdy).HasColumnName("SNGCHDY");
-
-                entity.Property(e => e.Sngfirstbaby).HasColumnName("SNGFIRSTBABY");
-
-                entity.Property(e => e.Sngfirstchde).HasColumnName("SNGFIRSTCHDE");
-
-                entity.Property(e => e.Sngfirstchdy).HasColumnName("SNGFIRSTCHDY");
-
-                entity.Property(e => e.Trp).HasColumnName("TRP");
-
-                entity.Property(e => e.Trpbaby).HasColumnName("TRPBABY");
-
-                entity.Property(e => e.Trpchde).HasColumnName("TRPCHDE");
-
-                entity.Property(e => e.Trpchdy).HasColumnName("TRPCHDY");
-
-                entity.Property(e => e.Trpfirstbaby).HasColumnName("TRPFIRSTBABY");
-
-                entity.Property(e => e.Trpfirstchde).HasColumnName("TRPFIRSTCHDE");
-
-                entity.Property(e => e.Trpfirstchdy).HasColumnName("TRPFIRSTCHDY");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdhotelRatecodeAdduserNavigation)
@@ -9862,189 +3787,23 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDetail>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DETAIL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Ratecodeid, e.Priceconditionid, e.Stayfrom, e.Stayto, e.Minlos, e.Maxlos }, "IX_MISS_HOTELSEARCH");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC2632A733C7")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Baby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BABY");
-
-                entity.Property(e => e.Chde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDY");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Checkindays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("CHECKINDAYS")
                     .IsFixedLength();
 
                 entity.Property(e => e.Checkoutdays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("CHECKOUTDAYS")
                     .IsFixedLength();
 
-                entity.Property(e => e.Childcalckind).HasColumnName("CHILDCALCKIND");
-
-                entity.Property(e => e.Commissionincluded).HasColumnName("COMMISSIONINCLUDED");
-
-                entity.Property(e => e.Commissionpercent).HasColumnName("COMMISSIONPERCENT");
-
-                entity.Property(e => e.Dbl)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("DBL");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Exbed)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("EXBED");
-
-                entity.Property(e => e.Firstbaby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("FIRSTBABY");
-
-                entity.Property(e => e.Firstchde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("FIRSTCHDE");
-
-                entity.Property(e => e.Firstchdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("FIRSTCHDY");
-
-                entity.Property(e => e.Fixprice).HasColumnName("FIXPRICE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Maxlos).HasColumnName("MAXLOS");
-
-                entity.Property(e => e.MindayRate).HasColumnName("MINDAY_RATE");
-
-                entity.Property(e => e.Minlos).HasColumnName("MINLOS");
-
-                entity.Property(e => e.Priceconditionid).HasColumnName("PRICECONDITIONID");
-
-                entity.Property(e => e.Pricesort)
-                    .HasColumnName("PRICESORT")
-                    .HasComputedColumnSql("(((((isnull((20)*datediff(day,[SELLFROM],[SELLTO]),(365))+isnull((10)*datediff(day,[STAYFROM],[STAYTO]),(365)))+isnull((1)*len(ltrim(rtrim([CHECKINDAYS]))),(7)))+isnull((2)*len(ltrim(rtrim([CHECKOUTDAYS]))),(7)))+isnull((3)*len(ltrim(rtrim([STAYINGDAYS]))),(7)))+isnull((4)*[MAXLOS]-[MINLOS],(0)))", true);
-
-                entity.Property(e => e.Quad)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("QUAD");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Sng)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNG");
-
-                entity.Property(e => e.Sngbaby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGBABY");
-
-                entity.Property(e => e.Sngchde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGCHDE");
-
-                entity.Property(e => e.Sngchdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGCHDY");
-
-                entity.Property(e => e.Sngchildcalckind).HasColumnName("SNGCHILDCALCKIND");
-
-                entity.Property(e => e.Sngfirstbaby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGFIRSTBABY");
-
-                entity.Property(e => e.Sngfirstchde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGFIRSTCHDE");
-
-                entity.Property(e => e.Sngfirstchdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNGFIRSTCHDY");
-
-                entity.Property(e => e.Stayfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYFROM");
+                entity.Property(e => e.Pricesort).HasComputedColumnSql("(((((isnull((20)*datediff(day,[SELLFROM],[SELLTO]),(365))+isnull((10)*datediff(day,[STAYFROM],[STAYTO]),(365)))+isnull((1)*len(ltrim(rtrim([CHECKINDAYS]))),(7)))+isnull((2)*len(ltrim(rtrim([CHECKOUTDAYS]))),(7)))+isnull((3)*len(ltrim(rtrim([STAYINGDAYS]))),(7)))+isnull((4)*[MAXLOS]-[MINLOS],(0)))", true);
 
                 entity.Property(e => e.Stayingdays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("STAYINGDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Stayto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYTO");
-
-                entity.Property(e => e.Trp)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRP");
-
-                entity.Property(e => e.Trpbaby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPBABY");
-
-                entity.Property(e => e.Trpchde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPCHDE");
-
-                entity.Property(e => e.Trpchdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPCHDY");
-
-                entity.Property(e => e.Trpchildcalckind).HasColumnName("TRPCHILDCALCKIND");
-
-                entity.Property(e => e.Trpfirstbaby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPFIRSTBABY");
-
-                entity.Property(e => e.Trpfirstchde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPFIRSTCHDE");
-
-                entity.Property(e => e.Trpfirstchdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRPFIRSTCHDY");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
 
                 entity.HasOne(d => d.Pricecondition)
                     .WithMany(p => p.StdhotelRatecodeDetail)
@@ -10058,32 +3817,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDHOTEL__3214EC268DDA1218")
                     .IsClustered(false);
 
-                entity.ToTable("STDHOTEL_RATECODE_DETAIL_AGENCYGROUPS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Detailid).HasColumnName("DETAILID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdhotelRatecodeDetailAgencygroupsAdduserNavigation)
@@ -10111,41 +3847,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDetailOccupancy>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("STDHOTEL_RATECODE_DETAIL_OCCUPANCY");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC264DFD2C06")
-                    .IsUnique();
-
-                entity.HasIndex(e => new { e.Ratecodedetailid, e.Adult, e.Chde, e.Chdy, e.Baby, e.Totalchd }, "UQ__STDHOTEL__57C4B69A2CE4E4FF")
-                    .IsUnique();
-
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.Costprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("COSTPRICE");
-
-                entity.Property(e => e.Guestprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("GUESTPRICE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Ratecodedetailid).HasColumnName("RATECODEDETAILID");
-
-                entity.Property(e => e.Totalchd).HasColumnName("TOTALCHD");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany()
@@ -10161,106 +3863,23 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDiscount>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.AdditionalDiscount, "IX_STDHOTEL_RATECODE_DISCOUNT");
+                entity.Property(e => e.AdditionalEffect).HasDefaultValueSql("((2))");
 
-                entity.HasIndex(e => new { e.Sellfrom, e.Sellto }, "IX_STDHOTEL_RATECODE_DISCOUNT_1");
-
-                entity.HasIndex(e => new { e.Stayfrom, e.Stayto }, "IX_STDHOTEL_RATECODE_DISCOUNT_2");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC267A852001")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AdditionalDiscount).HasColumnName("ADDITIONAL_DISCOUNT");
-
-                entity.Property(e => e.AdditionalEffect)
-                    .HasColumnName("ADDITIONAL_EFFECT")
-                    .HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Agencyid).HasColumnName("AGENCYID");
-
-                entity.Property(e => e.Applyalone).HasColumnName("APPLYALONE");
-
-                entity.Property(e => e.Applydays)
-                    .HasMaxLength(100)
-                    .HasColumnName("APPLYDAYS");
-
-                entity.Property(e => e.Applyfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("APPLYFROM");
-
-                entity.Property(e => e.Applyorder).HasColumnName("APPLYORDER");
-
-                entity.Property(e => e.Applyto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("APPLYTO");
-
-                entity.Property(e => e.Applytype).HasColumnName("APPLYTYPE");
-
-                entity.Property(e => e.Applyzone)
-                    .HasColumnName("APPLYZONE")
-                    .HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Basictype).HasColumnName("BASICTYPE");
+                entity.Property(e => e.Applyzone).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.Checkindays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("CHECKINDAYS")
                     .IsFixedLength();
 
                 entity.Property(e => e.Checkoutdays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("CHECKOUTDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Discount).HasColumnName("DISCOUNT");
-
-                entity.Property(e => e.Discounttype).HasColumnName("DISCOUNTTYPE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Maxlos).HasColumnName("MAXLOS");
-
-                entity.Property(e => e.Maxpax).HasColumnName("MAXPAX");
-
-                entity.Property(e => e.Minlos).HasColumnName("MINLOS");
-
-                entity.Property(e => e.Minpax).HasColumnName("MINPAX");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Stayfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYFROM");
 
                 entity.Property(e => e.Stayingdays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("STAYINGDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Stayto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYTO");
 
                 entity.HasOne(d => d.Agency)
                     .WithMany(p => p.StdhotelRatecodeDiscount)
@@ -10288,17 +3907,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDiscountContract>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT_CONTRACT");
-
-                entity.HasIndex(e => new { e.Discountid, e.Contractid }, "UQ__STDHOTEL__100A09E2B088803D")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Contractid).HasColumnName("CONTRACTID");
-
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
                 entity.HasOne(d => d.Contract)
                     .WithMany(p => p.StdhotelRatecodeDiscountContract)
                     .HasForeignKey(d => d.Contractid)
@@ -10310,33 +3918,8 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__STDHOTEL___DISCO__5B837F96");
             });
 
-            modelBuilder.Entity<StdhotelRatecodeDiscountDiscount>(entity =>
-            {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT_DISCOUNT");
-
-                entity.HasIndex(e => new { e.Discountid, e.Otherdiscountid }, "UQ__STDHOTEL__649F0431A924ADCC")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
-                entity.Property(e => e.Otherdiscountid).HasColumnName("OTHERDISCOUNTID");
-            });
-
             modelBuilder.Entity<StdhotelRatecodeDiscountMarket>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT_MARKET");
-
-                entity.HasIndex(e => new { e.Discountid, e.Marketid }, "UQ__STDHOTEL__4B96FBB176D8588E")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
                 entity.HasOne(d => d.Discount)
                     .WithMany(p => p.StdhotelRatecodeDiscountMarket)
                     .HasForeignKey(d => d.Discountid)
@@ -10351,17 +3934,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDiscountRatetype>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT_RATETYPE");
-
-                entity.HasIndex(e => new { e.Discountid, e.Ratetypeid }, "UQ__STDHOTEL__050B357DD8B8D23E")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
-
                 entity.HasOne(d => d.Discount)
                     .WithMany(p => p.StdhotelRatecodeDiscountRatetype)
                     .HasForeignKey(d => d.Discountid)
@@ -10376,17 +3948,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeDiscountRoomtype>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_DISCOUNT_ROOMTYPE");
-
-                entity.HasIndex(e => new { e.Discountid, e.Roomtypeid }, "UQ__STDHOTEL__46861580EC62108A")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
                 entity.HasOne(d => d.Discount)
                     .WithMany(p => p.StdhotelRatecodeDiscountRoomtype)
                     .HasForeignKey(d => d.Discountid)
@@ -10405,56 +3966,19 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDHOTEL__3214EC266A363F9F")
                     .IsClustered(false);
 
-                entity.ToTable("STDHOTEL_RATECODE_MARKUP");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Agencyid).HasColumnName("AGENCYID");
-
-                entity.Property(e => e.ApplyType).HasColumnName("APPLY_TYPE");
-
-                entity.Property(e => e.Applyzone)
-                    .HasColumnName("APPLYZONE")
-                    .HasDefaultValueSql("((2))");
+                entity.Property(e => e.Applyzone).HasDefaultValueSql("((2))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Stayfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYFROM");
 
                 entity.Property(e => e.Stayingdays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("STAYINGDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Stayto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYTO");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdhotelRatecodeMarkupAdduserNavigation)
@@ -10481,14 +4005,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeMarkupMarkets>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_MARKUP_MARKETS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Markupid).HasColumnName("MARKUPID");
-
                 entity.HasOne(d => d.Market)
                     .WithMany(p => p.StdhotelRatecodeMarkupMarkets)
                     .HasForeignKey(d => d.Marketid)
@@ -10504,32 +4020,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatecodeMarkupRoomtype>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATECODE_MARKUP_ROOMTYPE");
-
-                entity.HasIndex(e => e.BeforeDiscount, "IX_STDHOTEL_RATECODE_MARKUP_ROOMTYPE");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.AdultPrice).HasColumnName("ADULT_PRICE");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.BabyPrice).HasColumnName("BABY_PRICE");
-
-                entity.Property(e => e.BeforeDiscount).HasColumnName("BEFORE_DISCOUNT");
-
-                entity.Property(e => e.ChdePrice).HasColumnName("CHDE_PRICE");
-
-                entity.Property(e => e.ChdyPrice).HasColumnName("CHDY_PRICE");
-
-                entity.Property(e => e.LastRate).HasColumnName("LAST_RATE");
-
-                entity.Property(e => e.Markupid).HasColumnName("MARKUPID");
-
-                entity.Property(e => e.Rate).HasColumnName("RATE");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
                 entity.HasOne(d => d.Markup)
                     .WithMany(p => p.StdhotelRatecodeMarkupRoomtype)
                     .HasForeignKey(d => d.Markupid)
@@ -10545,66 +4035,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatetype>(entity =>
             {
-                entity.ToTable("STDHOTEL_RATETYPE");
-
-                entity.HasIndex(e => e.Id, "UQ__STDHOTEL__3214EC26E6CD802C")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.EntEtsid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ETSID");
-
-                entity.Property(e => e.EntHotelrunnerid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENT_HOTELRUNNERID");
-
-                entity.Property(e => e.EntIatiid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_IATIID");
-
-                entity.Property(e => e.EntId).HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntJollytourid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_JOLLYTOURID");
-
-                entity.Property(e => e.EntSednaid)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAID");
-
-                entity.Property(e => e.EntSeturid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURID");
-
-                entity.Property(e => e.EntTatilbudurid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TATILBUDURID");
-
-                entity.Property(e => e.EntTouristicaid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TOURISTICAID");
-
-                entity.Property(e => e.EntTravelclickid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TRAVELCLICKID");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Isrefundable).HasColumnName("ISREFUNDABLE");
-
-                entity.Property(e => e.RefundDay).HasColumnName("REFUND_DAY");
-
-                entity.Property(e => e.RefundLasttime).HasColumnName("REFUND_LASTTIME");
-
-                entity.Property(e => e.Useonline).HasColumnName("USEONLINE");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany(p => p.StdhotelRatetype)
@@ -10615,30 +4046,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRatetypesAvailability>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("STDHOTEL_RATETYPES_AVAILABILITY");
-
-                entity.HasIndex(e => new { e.Corpid, e.Roomtypeid, e.Ratetypeid, e.Date, e.Marketid }, "UQ__STDHOTEL__448ED8D9FD7F18D1")
-                    .IsUnique();
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Definedquota).HasColumnName("DEFINEDQUOTA");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Market)
                     .WithMany()
@@ -10660,130 +4068,15 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRoomtypes>(entity =>
             {
-                entity.ToTable("STDHOTEL_ROOMTYPES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Roomgroup, "IX_STDHOTEL_ROOMTYPES");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Roomtype, "IX_STDHOTEL_ROOMTYPES_1");
+                entity.Property(e => e.AdultRate).HasDefaultValueSql("((1))");
 
-                entity.HasIndex(e => e.Isdeleted, "IX_STDHOTEL_ROOMTYPES_2");
+                entity.Property(e => e.BabyRate).HasDefaultValueSql("((1))");
 
-                entity.HasIndex(e => e.Isdisabled, "IX_STDHOTEL_ROOMTYPES_3");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.AdultRate)
-                    .HasColumnName("ADULT_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.BabyRate)
-                    .HasColumnName("BABY_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.BabycountsIncToBeds).HasColumnName("BABYCOUNTS_INC_TO_BEDS");
-
-                entity.Property(e => e.ChildRate)
-                    .HasColumnName("CHILD_RATE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.DisplayPersonCount).HasColumnName("DISPLAY_PERSON_COUNT");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.EntEtsid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ETSID");
-
-                entity.Property(e => e.EntHotelrunnerid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENT_HOTELRUNNERID");
-
-                entity.Property(e => e.EntIatiid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_IATIID");
-
-                entity.Property(e => e.EntId)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ID");
-
-                entity.Property(e => e.EntJollytourid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_JOLLYTOURID");
-
-                entity.Property(e => e.EntSednaid)
-                    .HasMaxLength(250)
-                    .HasColumnName("ENT_SEDNAID");
-
-                entity.Property(e => e.EntSeturid)
-                    .HasMaxLength(150)
-                    .HasColumnName("ENT_SETURID");
-
-                entity.Property(e => e.EntTatilbudurid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TATILBUDURID");
-
-                entity.Property(e => e.EntTouristicaid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TOURISTICAID");
-
-                entity.Property(e => e.EntTravelclickid)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_TRAVELCLICKID");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Maxadultcount).HasColumnName("MAXADULTCOUNT");
-
-                entity.Property(e => e.Maxbabycount).HasColumnName("MAXBABYCOUNT");
-
-                entity.Property(e => e.Maxbedcount).HasColumnName("MAXBEDCOUNT");
-
-                entity.Property(e => e.Maxchildcount).HasColumnName("MAXCHILDCOUNT");
-
-                entity.Property(e => e.Minadultcount).HasColumnName("MINADULTCOUNT");
-
-                entity.Property(e => e.Minbabycount).HasColumnName("MINBABYCOUNT");
-
-                entity.Property(e => e.Minbedcount).HasColumnName("MINBEDCOUNT");
-
-                entity.Property(e => e.Minchildcount).HasColumnName("MINCHILDCOUNT");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.Roomgroup)
-                    .HasMaxLength(50)
-                    .HasColumnName("ROOMGROUP");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(6)
-                    .HasColumnName("ROOMTYPE");
-
-                entity.Property(e => e.Thumbnailimg)
-                    .HasMaxLength(250)
-                    .HasColumnName("THUMBNAILIMG");
+                entity.Property(e => e.ChildRate).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdhotelRoomtypesAdduserNavigation)
@@ -10810,31 +4103,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelRoomtypesAvailability>(entity =>
             {
-                entity.ToTable("STDHOTEL_ROOMTYPES_AVAILABILITY");
-
-                entity.HasIndex(e => new { e.Corpid, e.Date, e.Roomtypeid }, "UQ__STDHOTEL__E5B25094C12D3A70")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Definedquota).HasColumnName("DEFINEDQUOTA");
-
-                entity.Property(e => e.Releasedate)
-                    .HasColumnType("date")
-                    .HasColumnName("RELEASEDATE")
-                    .HasComputedColumnSql("(dateadd(day, -[RELEASEDAYS],[DATE]))", true);
-
-                entity.Property(e => e.Releasedays).HasColumnName("RELEASEDAYS");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.Soldquota).HasColumnName("SOLDQUOTA");
+                entity.Property(e => e.Releasedate).HasComputedColumnSql("(dateadd(day, -[RELEASEDAYS],[DATE]))", true);
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.StdhotelRoomtypesAvailability)
@@ -10851,23 +4120,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelSeasons>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("STDHOTEL_SEASONS");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Seasonfinish)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SEASONFINISH");
-
-                entity.Property(e => e.Seasonstart)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SEASONSTART");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Hotel)
                     .WithMany()
@@ -10877,26 +4130,6 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdhotelStopsale>(entity =>
             {
-                entity.ToTable("STDHOTEL_STOPSALE");
-
-                entity.HasIndex(e => e.Corpid, "IX_CORP");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Fromdate)
-                    .HasColumnType("date")
-                    .HasColumnName("FROMDATE");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Priceconditionid).HasColumnName("PRICECONDITIONID");
-
-                entity.Property(e => e.Todate)
-                    .HasColumnType("date")
-                    .HasColumnName("TODATE");
-
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.StdhotelStopsale)
                     .HasForeignKey(d => d.Corpid)
@@ -10909,33 +4142,14 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__STDHOTEL___PRICE__6F8A7843");
             });
 
-            modelBuilder.Entity<Stdhoteldiscount>(entity =>
-            {
-                entity.ToTable("STDHOTELDISCOUNT");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-            });
-
             modelBuilder.Entity<Stdlanguages>(entity =>
             {
                 entity.HasKey(e => e.Code)
                     .HasName("PK__STDLANGU__AA1D4378C43472E9");
 
-                entity.ToTable("STDLANGUAGES");
-
                 entity.Property(e => e.Code)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("CODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
             });
 
             modelBuilder.Entity<StdmarketCountries>(entity =>
@@ -10944,20 +4158,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDMARKE__3214EC2683C5DABB")
                     .IsClustered(false);
 
-                entity.ToTable("STDMARKET_COUNTRIES");
-
-                entity.HasIndex(e => e.Countrycode, "UQ__STDMARKE__FAC7CEB6C9F85917")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Countrycode)
-                    .HasMaxLength(2)
-                    .HasColumnName("COUNTRYCODE");
-
-                entity.Property(e => e.Stdmarketid).HasColumnName("STDMARKETID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Stdmarket)
                     .WithMany(p => p.StdmarketCountries)
@@ -10972,31 +4173,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDMARKE__3214EC2650F9EF41")
                     .IsClustered(false);
 
-                entity.ToTable("STDMARKETS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Definition }, "UQ__STDMARKE__D0FAF608463C925A")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
-                    .HasColumnName("CURCODE")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.ForceBaskettocurcode).HasColumnName("FORCE_BASKETTOCURCODE");
-
-                entity.Property(e => e.Language)
-                    .HasMaxLength(5)
-                    .HasColumnName("LANGUAGE");
+                entity.Property(e => e.Curcode).IsFixedLength();
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.Stdmarkets)
@@ -11009,16 +4188,6 @@ namespace Asisia.webapi.Models.Db
             {
                 entity.HasKey(e => e.Roomtype)
                     .HasName("PK__STDROOMT__D28E9DD16E29EB50");
-
-                entity.ToTable("STDROOMTYPES");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(6)
-                    .HasColumnName("ROOMTYPE");
-
-                entity.Property(e => e.EntRoomtype)
-                    .HasMaxLength(50)
-                    .HasColumnName("ENT_ROOMTYPE");
             });
 
             modelBuilder.Entity<Stdstore>(entity =>
@@ -11027,66 +4196,13 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26DBCE8B6A")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Addressid).HasColumnName("ADDRESSID");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Contact)
-                    .HasMaxLength(200)
-                    .HasColumnName("CONTACT");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Fax).HasColumnName("FAX");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(250)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("THUMBNAILURL");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Typename)
-                    .HasMaxLength(10)
                     .IsUnicode(false)
-                    .HasColumnName("TYPENAME")
                     .HasComputedColumnSql("(case [TYPE] when (0) then 'Restaurant'  end)", false);
-
-                entity.Property(e => e.Webaddress)
-                    .HasMaxLength(250)
-                    .HasColumnName("WEBADDRESS");
 
                 entity.HasOne(d => d.Address)
                     .WithMany(p => p.Stdstore)
@@ -11117,31 +4233,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC2655910A0A")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_GROUP_ITEMS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Groupid, e.Itemid }, "UQ__STDSTORE__98E91DBD6E833329")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Itemid).HasColumnName("ITEMID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdstoreItemGroupItemsAdduserNavigation)
@@ -11173,49 +4267,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26253554E9")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_GROUPS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Storeid, e.Definition }, "UQ__STDSTORE__C467D422F9DABF61")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(120)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Showinportal).HasColumnName("SHOWINPORTAL");
-
-                entity.Property(e => e.Sortindex).HasColumnName("SORTINDEX");
-
-                entity.Property(e => e.Storeid).HasColumnName("STOREID");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("THUMBNAILURL");
-
-                entity.Property(e => e.Title).HasColumnName("TITLE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdstoreItemGroupsAdduserNavigation)
@@ -11237,35 +4291,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<StdstoreItemImages>(entity =>
             {
-                entity.ToTable("STDSTORE_ITEM_IMAGES");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Default).HasColumnName("DEFAULT");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.StoreItemSizesid).HasColumnName("STORE_ITEM_SIZESID");
-
-                entity.Property(e => e.StoreItemid).HasColumnName("STORE_ITEMID");
-
-                entity.Property(e => e.Thumbnail)
-                    .HasMaxLength(250)
-                    .HasColumnName("THUMBNAIL");
-
-                entity.Property(e => e.Uid)
-                    .HasColumnName("UID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL");
+                entity.Property(e => e.Uid).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.StoreItemSizes)
                     .WithMany(p => p.StdstoreItemImages)
@@ -11285,34 +4311,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26D03F377E")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_INGREDIENTS");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(75)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.StoreItemSizesid).HasColumnName("STORE_ITEM_SIZESID");
-
-                entity.Property(e => e.StoreItemid).HasColumnName("STORE_ITEMID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdstoreItemIngredients)
@@ -11338,54 +4339,17 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26971CC529")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_PRICES");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.OnlinePrice).HasColumnName("ONLINE_PRICE");
 
                 entity.Property(e => e.Selldays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("SELLDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Sellend)
-                    .HasColumnType("date")
-                    .HasColumnName("SELLEND");
-
-                entity.Property(e => e.Sellstart)
-                    .HasColumnType("date")
-                    .HasColumnName("SELLSTART");
-
-                entity.Property(e => e.StoreItemSizesid).HasColumnName("STORE_ITEM_SIZESID");
-
-                entity.Property(e => e.StoreItemid).HasColumnName("STORE_ITEMID");
-
-                entity.Property(e => e.StorePrice).HasColumnName("STORE_PRICE");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdstoreItemPrices)
@@ -11416,32 +4380,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC2654ABE1A8")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_PRICES_INGREDIENTS");
+                entity.Property(e => e.Id).ValueGeneratedNever();
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Ingredientid).HasColumnName("INGREDIENTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Price).HasColumnName("PRICE");
-
-                entity.Property(e => e.Priceid).HasColumnName("PRICEID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.StdstoreItemPricesIngredients)
@@ -11468,39 +4409,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26C8131450")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEM_SIZES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.StoreItemid, e.Definition }, "UQ__STDSTORE__92B9D130B75A427A")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(200)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.StoreItemid).HasColumnName("STORE_ITEMID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<StdstoreItems>(entity =>
@@ -11509,39 +4420,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC267139131B")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEMS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Storeid, e.Definition }, "UQ__STDSTORE__C467D422F4172951")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(200)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Storeid).HasColumnName("STOREID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<StdstoreItemsGroups>(entity =>
@@ -11550,17 +4431,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__STDSTORE__3214EC26FE38D331")
                     .IsClustered(false);
 
-                entity.ToTable("STDSTORE_ITEMS_GROUPS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.Itemid).HasColumnName("ITEMID");
-
-                entity.Property(e => e.Sortindex).HasColumnName("SORTINDEX");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Group)
                     .WithMany(p => p.StdstoreItemsGroups)
@@ -11579,16 +4450,6 @@ namespace Asisia.webapi.Models.Db
             {
                 entity.HasKey(e => e.Vehicletype)
                     .HasName("PK__STDVEHIC__560C00BC2A4F60DA");
-
-                entity.ToTable("STDVEHICLETYPES");
-
-                entity.Property(e => e.Vehicletype)
-                    .HasMaxLength(40)
-                    .HasColumnName("VEHICLETYPE");
-
-                entity.Property(e => e.Imgtype)
-                    .HasMaxLength(30)
-                    .HasColumnName("IMGTYPE");
             });
 
             modelBuilder.Entity<Survey>(entity =>
@@ -11597,59 +4458,15 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SURVEY__3214EC2657C407BC")
                     .IsClustered(false);
 
-                entity.ToTable("SURVEY");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Questionnumbers).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.Requiredmarks).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Confirmbefore).HasColumnName("CONFIRMBEFORE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Design).HasColumnName("DESIGN");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Exitlinkvisible).HasColumnName("EXITLINKVISIBLE");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(100)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Questionnumbers)
-                    .IsRequired()
-                    .HasColumnName("QUESTIONNUMBERS")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Requiredmarks)
-                    .IsRequired()
-                    .HasColumnName("REQUIREDMARKS")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(250)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Titlevisible)
-                    .IsRequired()
-                    .HasColumnName("TITLEVISIBLE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Titlevisible).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.SurveyAdduserNavigation)
@@ -11675,29 +4492,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SURVEY_A__3214EC26FB0AD76D")
                     .IsClustered(false);
 
-                entity.ToTable("SURVEY_ANSWEROPTIONS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Answer)
-                    .HasMaxLength(250)
-                    .HasColumnName("ANSWER");
-
-                entity.Property(e => e.Checked).HasColumnName("CHECKED");
-
-                entity.Property(e => e.Istrueanswer).HasColumnName("ISTRUEANSWER");
-
-                entity.Property(e => e.Point).HasColumnName("POINT");
-
-                entity.Property(e => e.Qanswer)
-                    .HasMaxLength(250)
-                    .HasColumnName("QANSWER");
-
-                entity.Property(e => e.Questionid).HasColumnName("QUESTIONID");
-
-                entity.Property(e => e.Surveysid).HasColumnName("SURVEYSID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Question)
                     .WithMany(p => p.SurveyAnsweroptions)
@@ -11718,35 +4513,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SURVEY_A__3214EC26CA6CFBBC")
                     .IsClustered(false);
 
-                entity.ToTable("SURVEY_ANSWERS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Answer)
-                    .HasMaxLength(250)
-                    .HasColumnName("ANSWER");
-
-                entity.Property(e => e.Otheranswer)
-                    .HasMaxLength(250)
-                    .HasColumnName("OTHERANSWER");
-
-                entity.Property(e => e.Otherisanswer).HasColumnName("OTHERISANSWER");
-
-                entity.Property(e => e.Question)
-                    .HasMaxLength(250)
-                    .HasColumnName("QUESTION");
-
-                entity.Property(e => e.Questionid).HasColumnName("QUESTIONID");
-
-                entity.Property(e => e.Required).HasColumnName("REQUIRED");
-
-                entity.Property(e => e.Surveysid).HasColumnName("SURVEYSID");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
-                entity.Property(e => e.Useother).HasColumnName("USEOTHER");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Surveys)
                     .WithMany(p => p.SurveyAnswers)
@@ -11761,33 +4528,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__SURVEYS__3214EC2690F7C131")
                     .IsClustered(false);
 
-                entity.ToTable("SURVEYS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Starttime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTTIME");
-
-                entity.Property(e => e.Surveyid).HasColumnName("SURVEYID");
+                entity.Property(e => e.Editdate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.SurveysAdduserNavigation)
@@ -11814,68 +4559,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<SwicthboardLog>(entity =>
             {
-                entity.ToTable("SWICTHBOARD_LOG");
-
-                entity.HasIndex(e => e.Adddate, "IX_SWICTHBOARD_LOG");
-
-                entity.HasIndex(e => e.Logkey, "IX_SWICTHBOARD_LOG_1");
-
-                entity.HasIndex(e => new { e.Logkey, e.Adddate }, "IX_SWICTHBOARD_LOG_2");
-
-                entity.HasIndex(e => e.Linkedid, "IX_SWICTHBOARD_LOG_3");
-
-                entity.HasIndex(e => e.Dstchannel, "IX_SWICTHBOARD_LOG_4");
-
-                entity.HasIndex(e => new { e.Clid, e.Dstchannel }, "IX_SWICTHBOARD_LOG_5");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Accountcode)
-                    .HasMaxLength(50)
-                    .HasColumnName("ACCOUNTCODE");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Campaignname)
-                    .HasMaxLength(150)
-                    .HasColumnName("CAMPAIGNNAME");
-
-                entity.Property(e => e.Cause).HasColumnName("CAUSE");
-
-                entity.Property(e => e.Causetxt)
-                    .HasMaxLength(150)
-                    .HasColumnName("CAUSETXT");
-
-                entity.Property(e => e.Channelstate).HasColumnName("CHANNELSTATE");
-
-                entity.Property(e => e.Channelstatedesc)
-                    .HasMaxLength(90)
-                    .HasColumnName("CHANNELSTATEDESC");
-
-                entity.Property(e => e.Clid)
-                    .HasMaxLength(80)
-                    .HasColumnName("CLID");
-
-                entity.Property(e => e.Dst)
-                    .HasMaxLength(80)
-                    .HasColumnName("DST");
-
-                entity.Property(e => e.Dstchannel)
-                    .HasMaxLength(80)
-                    .HasColumnName("DSTCHANNEL");
-
-                entity.Property(e => e.Jsondata).HasColumnName("JSONDATA");
-
-                entity.Property(e => e.Linkedid)
-                    .HasMaxLength(50)
-                    .HasColumnName("LINKEDID");
-
-                entity.Property(e => e.Logkey)
-                    .HasMaxLength(50)
-                    .HasColumnName("LOGKEY");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
             });
 
             modelBuilder.Entity<Ticket>(entity =>
@@ -11884,56 +4568,13 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TICKET__3214EC269EB03149")
                     .IsClustered(false);
 
-                entity.ToTable("TICKET");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Adultmandatory).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Adultmandatory)
-                    .HasColumnName("ADULTMANDATORY")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Childmandatory).HasColumnName("CHILDMANDATORY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(200)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Endofminute).HasColumnName("ENDOFMINUTE");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Maxselldate).HasColumnName("MAXSELLDATE");
-
-                entity.Property(e => e.Plu)
-                    .HasMaxLength(10)
-                    .HasColumnName("PLU");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Tickettype)
-                    .HasColumnName("TICKETTYPE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Tickettype).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TicketAdduserNavigation)
@@ -11955,34 +4596,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<TicketActivations>(entity =>
             {
-                entity.ToTable("TICKET_ACTIVATIONS");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Direction).HasColumnName("DIRECTION");
-
-                entity.Property(e => e.Gatenumber)
-                    .HasMaxLength(30)
-                    .HasColumnName("GATENUMBER");
-
-                entity.Property(e => e.Isallow).HasColumnName("ISALLOW");
-
-                entity.Property(e => e.Personno).HasColumnName("PERSONNO");
-
-                entity.Property(e => e.Persontype)
-                    .HasMaxLength(15)
-                    .HasColumnName("PERSONTYPE");
-
-                entity.Property(e => e.Reason)
-                    .HasMaxLength(250)
-                    .HasColumnName("REASON");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.GatenumberNavigation)
                     .WithMany(p => p.TicketActivations)
@@ -12001,34 +4615,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TICKET_G__3214EC26E60638C6")
                     .IsClustered(false);
 
-                entity.ToTable("TICKET_GIFTS");
-
-                entity.HasIndex(e => new { e.Corpid, e.Definition }, "UQ__TICKET_G__D0FAF60846C03765")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Plu)
-                    .HasMaxLength(10)
-                    .HasColumnName("PLU");
-
-                entity.Property(e => e.Price).HasColumnName("PRICE");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.TicketGifts)
@@ -12045,211 +4636,81 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<TicketHours>(entity =>
             {
-                entity.ToTable("TICKET_HOURS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Datesort, "IX_TICKET_HOURS");
+                entity.Property(e => e.Datesort).HasComputedColumnSql("(datediff(day,[STARTDATE],[ENDDATE]))", true);
 
-                entity.HasIndex(e => new { e.Startdate, e.Enddate }, "IX_TICKET_HOURS_1");
+                entity.Property(e => e.FridayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
+                entity.Property(e => e.FridayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.FridayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.FridayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.Capacity).HasColumnName("CAPACITY");
+                entity.Property(e => e.FridayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Datesort)
-                    .HasColumnName("DATESORT")
-                    .HasComputedColumnSql("(datediff(day,[STARTDATE],[ENDDATE]))", true);
+                entity.Property(e => e.Minuteperiod).HasDefaultValueSql("((30))");
 
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
+                entity.Property(e => e.MondayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
+                entity.Property(e => e.MondayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
+                entity.Property(e => e.MondayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.Enddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDDATE");
+                entity.Property(e => e.MondayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.FridayEndtime)
-                    .HasColumnName("FRIDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
+                entity.Property(e => e.MondayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.FridayEndtimeM)
-                    .HasColumnName("FRIDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.SaturdayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.FridayMaxrescount).HasColumnName("FRIDAY_MAXRESCOUNT");
+                entity.Property(e => e.SaturdayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.FridayStarttime)
-                    .HasColumnName("FRIDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
+                entity.Property(e => e.SaturdayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.FridayStarttimeM)
-                    .HasColumnName("FRIDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.SaturdayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.FridayUse)
-                    .IsRequired()
-                    .HasColumnName("FRIDAY_USE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.SaturdayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Minuteperiod)
-                    .HasColumnName("MINUTEPERIOD")
-                    .HasDefaultValueSql("((30))");
+                entity.Property(e => e.SundayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.MondayEndtime)
-                    .HasColumnName("MONDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
+                entity.Property(e => e.SundayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.MondayEndtimeM)
-                    .HasColumnName("MONDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.SundayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.MondayMaxrescount).HasColumnName("MONDAY_MAXRESCOUNT");
+                entity.Property(e => e.SundayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.MondayStarttime)
-                    .HasColumnName("MONDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
+                entity.Property(e => e.SundayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.MondayStarttimeM)
-                    .HasColumnName("MONDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.ThursdayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.MondayUse)
-                    .IsRequired()
-                    .HasColumnName("MONDAY_USE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.ThursdayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SaturdayEndtime)
-                    .HasColumnName("SATURDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
+                entity.Property(e => e.ThursdayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.SaturdayEndtimeM)
-                    .HasColumnName("SATURDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.ThursdayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SaturdayMaxrescount).HasColumnName("SATURDAY_MAXRESCOUNT");
+                entity.Property(e => e.ThursdayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.SaturdayStarttime)
-                    .HasColumnName("SATURDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
+                entity.Property(e => e.TuesdayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.SaturdayStarttimeM)
-                    .HasColumnName("SATURDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.TuesdayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SaturdayUse)
-                    .IsRequired()
-                    .HasColumnName("SATURDAY_USE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.TuesdayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.Startdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTDATE");
+                entity.Property(e => e.TuesdayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SundayEndtime)
-                    .HasColumnName("SUNDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
+                entity.Property(e => e.TuesdayUse).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.SundayEndtimeM)
-                    .HasColumnName("SUNDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.WednesdayEndtime).HasDefaultValueSql("((23))");
 
-                entity.Property(e => e.SundayMaxrescount).HasColumnName("SUNDAY_MAXRESCOUNT");
+                entity.Property(e => e.WednesdayEndtimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SundayStarttime)
-                    .HasColumnName("SUNDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
+                entity.Property(e => e.WednesdayStarttime).HasDefaultValueSql("((9))");
 
-                entity.Property(e => e.SundayStarttimeM)
-                    .HasColumnName("SUNDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
+                entity.Property(e => e.WednesdayStarttimeM).HasDefaultValueSql("((0))");
 
-                entity.Property(e => e.SundayUse)
-                    .IsRequired()
-                    .HasColumnName("SUNDAY_USE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.ThursdayEndtime)
-                    .HasColumnName("THURSDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
-
-                entity.Property(e => e.ThursdayEndtimeM)
-                    .HasColumnName("THURSDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.ThursdayMaxrescount).HasColumnName("THURSDAY_MAXRESCOUNT");
-
-                entity.Property(e => e.ThursdayStarttime)
-                    .HasColumnName("THURSDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
-
-                entity.Property(e => e.ThursdayStarttimeM)
-                    .HasColumnName("THURSDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.ThursdayUse)
-                    .IsRequired()
-                    .HasColumnName("THURSDAY_USE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.TuesdayEndtime)
-                    .HasColumnName("TUESDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
-
-                entity.Property(e => e.TuesdayEndtimeM)
-                    .HasColumnName("TUESDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.TuesdayMaxrescount).HasColumnName("TUESDAY_MAXRESCOUNT");
-
-                entity.Property(e => e.TuesdayStarttime)
-                    .HasColumnName("TUESDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
-
-                entity.Property(e => e.TuesdayStarttimeM)
-                    .HasColumnName("TUESDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.TuesdayUse)
-                    .IsRequired()
-                    .HasColumnName("TUESDAY_USE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.WednesdayEndtime)
-                    .HasColumnName("WEDNESDAY_ENDTIME")
-                    .HasDefaultValueSql("((23))");
-
-                entity.Property(e => e.WednesdayEndtimeM)
-                    .HasColumnName("WEDNESDAY_ENDTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.WednesdayMaxrescount).HasColumnName("WEDNESDAY_MAXRESCOUNT");
-
-                entity.Property(e => e.WednesdayStarttime)
-                    .HasColumnName("WEDNESDAY_STARTTIME")
-                    .HasDefaultValueSql("((9))");
-
-                entity.Property(e => e.WednesdayStarttimeM)
-                    .HasColumnName("WEDNESDAY_STARTTIME_M")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.WednesdayUse)
-                    .IsRequired()
-                    .HasColumnName("WEDNESDAY_USE")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.WednesdayUse).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TicketHoursAdduserNavigation)
@@ -12275,37 +4736,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TICKET_M__3214EC260690C17D")
                     .IsClustered(false);
 
-                entity.ToTable("TICKET_MARKET");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Corpid, e.Definition, e.Isdeleted }, "UQ__TICKET_M__BDFB08EC06F75109")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(250)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Stdmarketid).HasColumnName("STDMARKETID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TicketMarketAdduserNavigation)
@@ -12333,84 +4766,21 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<TicketPrices>(entity =>
             {
-                entity.ToTable("TICKET_PRICES");
-
-                entity.HasIndex(e => e.Pricesort, "IX_TICKET_PRICES");
-
-                entity.HasIndex(e => new { e.Sellfrom, e.Sellto, e.Ticketdatefrom, e.Ticketdateto, e.Checkindays, e.Maxvalidcapacity }, "IX_TICKET_PRICES_1");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Adultprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("ADULTPRICE");
-
-                entity.Property(e => e.Agencyid).HasColumnName("AGENCYID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Checkindays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("CHECKINDAYS")
                     .IsFixedLength();
-
-                entity.Property(e => e.Childprice)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHILDPRICE");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
+                entity.Property(e => e.Pricekind).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
+                entity.Property(e => e.Pricesort).HasComputedColumnSql("(((((case when [SELLFROM] IS NOT NULL then (1) else (0) end+case when [SELLTO] IS NOT NULL then (1) else (0) end)+case when [TICKETDATEFROM] IS NOT NULL then (1) else (0) end)+case when [TICKETDATETO] IS NOT NULL then (1) else (0) end)+case when [CHECKINDAYS] IS NOT NULL then (1) else (0) end)+case when [MAXVALIDCAPACITY] IS NOT NULL then (1) else (0) end)", true);
 
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Maxvalidcapacity).HasColumnName("MAXVALIDCAPACITY");
-
-                entity.Property(e => e.Pricekind)
-                    .HasColumnName("PRICEKIND")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Pricesort)
-                    .HasColumnName("PRICESORT")
-                    .HasComputedColumnSql("(((((case when [SELLFROM] IS NOT NULL then (1) else (0) end+case when [SELLTO] IS NOT NULL then (1) else (0) end)+case when [TICKETDATEFROM] IS NOT NULL then (1) else (0) end)+case when [TICKETDATETO] IS NOT NULL then (1) else (0) end)+case when [CHECKINDAYS] IS NOT NULL then (1) else (0) end)+case when [MAXVALIDCAPACITY] IS NOT NULL then (1) else (0) end)", true);
-
-                entity.Property(e => e.Pricetype)
-                    .HasColumnName("PRICETYPE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Ticketdatefrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TICKETDATEFROM");
-
-                entity.Property(e => e.Ticketdateto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TICKETDATETO");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
-
-                entity.Property(e => e.Unitprice).HasColumnName("UNITPRICE");
+                entity.Property(e => e.Pricetype).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TicketPricesAdduserNavigation)
@@ -12447,53 +4817,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<TileItemoption>(entity =>
             {
-                entity.ToTable("TILE_ITEMOPTION");
-
-                entity.HasIndex(e => e.Ticketid, "UQ__TILE_ITE__19441072D123C1A9");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Bgimage)
-                    .HasColumnType("image")
-                    .HasColumnName("BGIMAGE");
-
-                entity.Property(e => e.Bgimage2)
-                    .HasColumnType("image")
-                    .HasColumnName("BGIMAGE2");
-
-                entity.Property(e => e.BgimageAlign)
-                    .HasMaxLength(35)
-                    .HasColumnName("BGIMAGE_ALIGN");
-
-                entity.Property(e => e.BgimageAlign2)
-                    .HasMaxLength(25)
-                    .HasColumnName("BGIMAGE_ALIGN2");
-
-                entity.Property(e => e.BgimageMode)
-                    .HasMaxLength(25)
-                    .HasColumnName("BGIMAGE_MODE");
-
-                entity.Property(e => e.BgimageMode2)
-                    .HasMaxLength(25)
-                    .HasColumnName("BGIMAGE_MODE2");
-
-                entity.Property(e => e.Giftid).HasColumnName("GIFTID");
-
-                entity.Property(e => e.GradientBegincolor).HasColumnName("GRADIENT_BEGINCOLOR");
-
-                entity.Property(e => e.GradientEndcolor).HasColumnName("GRADIENT_ENDCOLOR");
-
-                entity.Property(e => e.Groupid).HasColumnName("GROUPID");
-
-                entity.Property(e => e.RowCount)
-                    .HasColumnName("ROW_COUNT")
-                    .HasDefaultValueSql("((2))");
-
-                entity.Property(e => e.Size).HasColumnName("SIZE");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Ticketid).HasColumnName("TICKETID");
+                entity.Property(e => e.RowCount).HasDefaultValueSql("((2))");
 
                 entity.HasOne(d => d.Gift)
                     .WithMany(p => p.TileItemoption)
@@ -12512,62 +4836,15 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TOUR__3214EC26A3D5EF82")
                     .IsClustered(false);
 
-                entity.ToTable("TOUR");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Adultcapacity).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.Adultcapacity)
-                    .HasColumnName("ADULTCAPACITY")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.BabyMaxage).HasColumnName("BABY_MAXAGE");
-
-                entity.Property(e => e.Babycapacity).HasColumnName("BABYCAPACITY");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(100)
-                    .HasColumnName("BOARDTYPE");
-
-                entity.Property(e => e.ChdeMaxage).HasColumnName("CHDE_MAXAGE");
-
-                entity.Property(e => e.ChdyMaxage).HasColumnName("CHDY_MAXAGE");
-
-                entity.Property(e => e.Childcapacity).HasColumnName("CHILDCAPACITY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(70)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.TotalDays)
-                    .HasColumnName("TOTAL_DAYS")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.TripLocations).HasColumnName("TRIP_LOCATIONS");
+                entity.Property(e => e.TotalDays).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TourAdduserNavigation)
@@ -12593,62 +4870,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TOUR_DIS__3214EC26B2016A5E")
                     .IsClustered(false);
 
-                entity.ToTable("TOUR_DISCOUNTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Applytype).HasColumnName("APPLYTYPE");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Discount).HasColumnName("DISCOUNT");
-
-                entity.Property(e => e.Discounttype).HasColumnName("DISCOUNTTYPE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Maxpax).HasColumnName("MAXPAX");
-
-                entity.Property(e => e.Maxprice).HasColumnName("MAXPRICE");
-
-                entity.Property(e => e.Minpax).HasColumnName("MINPAX");
-
-                entity.Property(e => e.Minprice).HasColumnName("MINPRICE");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Tourfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TOURFROM");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
-
-                entity.Property(e => e.Tourto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TOURTO");
-
-                entity.Property(e => e.Validcount).HasColumnName("VALIDCOUNT");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TourDiscountsAdduserNavigation)
@@ -12676,33 +4900,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<TourImages>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("TOUR_IMAGES");
-
-                entity.Property(e => e.Default).HasColumnName("DEFAULT");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Thumbnail)
-                    .HasMaxLength(250)
-                    .HasColumnName("THUMBNAIL");
-
-                entity.Property(e => e.TourProgramid).HasColumnName("TOUR_PROGRAMID");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
-
-                entity.Property(e => e.Url)
-                    .HasMaxLength(250)
-                    .HasColumnName("URL");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.TourProgram)
                     .WithMany()
@@ -12723,80 +4921,15 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TOUR_PRI__3214EC262F119988")
                     .IsClustered(false);
 
-                entity.ToTable("TOUR_PRICES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Baby)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BABY");
-
-                entity.Property(e => e.Chde)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHDY");
-
-                entity.Property(e => e.Commissionincluded)
-                    .HasColumnName("COMMISSIONINCLUDED")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Commissionpercent).HasColumnName("COMMISSIONPERCENT");
+                entity.Property(e => e.Commissionincluded).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Dbl)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("DBL");
-
-                entity.Property(e => e.DepartureDate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DEPARTURE_DATE");
-
-                entity.Property(e => e.DepartureLocation)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEPARTURE_LOCATION");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Exbed)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("EXBED");
-
-                entity.Property(e => e.Quad)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("QUAD");
-
-                entity.Property(e => e.Sng)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("SNG");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
-
-                entity.Property(e => e.Trp)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("TRP");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TourPricesAdduserNavigation)
@@ -12828,48 +4961,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TOUR_PRO__3214EC26DD8FA3AC")
                     .IsClustered(false);
 
-                entity.ToTable("TOUR_PROGRAM");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Stepno, e.Sortorder }, "IX_TOUR_PROGRAM");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Duration).HasColumnName("DURATION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Interval).HasColumnName("INTERVAL");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Sortorder).HasColumnName("SORTORDER");
-
-                entity.Property(e => e.Stepno)
-                    .HasColumnName("STEPNO")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(200)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Tourid).HasColumnName("TOURID");
+                entity.Property(e => e.Stepno).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TourProgramAdduserNavigation)
@@ -12893,59 +4989,15 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__TOUR_PROG__TOURI__338A9CD5");
             });
 
-            modelBuilder.Entity<Tourdiscount>(entity =>
-            {
-                entity.ToTable("TOURDISCOUNT");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(50)
-                    .HasColumnName("DEFINITION");
-            });
-
             modelBuilder.Entity<TransferLocations>(entity =>
             {
                 entity.HasKey(e => e.Id)
                     .HasName("PK__TRANSFER__3214EC26B028FCA6")
                     .IsClustered(false);
 
-                entity.ToTable("TRANSFER_LOCATIONS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Airportcode)
-                    .HasMaxLength(5)
-                    .HasColumnName("AIRPORTCODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(170)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Latitude).HasColumnName("LATITUDE");
-
-                entity.Property(e => e.Longitude).HasColumnName("LONGITUDE");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TransferLocationsAdduserNavigation)
@@ -12971,134 +5023,31 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TRANSFER__3214EC261C147107")
                     .IsClustered(false);
 
-                entity.ToTable("TRANSFER_PRICES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Tolocationid, "IX_TRANSFER_PRICES");
-
-                entity.HasIndex(e => e.Fromlocationid, "IX_TRANSFER_PRICES_1");
-
-                entity.HasIndex(e => e.Pricesort, "IX_TRANSFER_PRICES_2");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.AdultpriceOneway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("ADULTPRICE_ONEWAY");
-
-                entity.Property(e => e.AdultpriceTwoway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("ADULTPRICE_TWOWAY");
-
-                entity.Property(e => e.Agencyid).HasColumnName("AGENCYID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.Property(e => e.Arrivaldays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("ARRIVALDAYS")
                     .IsFixedLength();
 
-                entity.Property(e => e.BabypriceOneway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BABYPRICE_ONEWAY");
-
-                entity.Property(e => e.BabypriceTwoway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("BABYPRICE_TWOWAY");
-
-                entity.Property(e => e.ChildpriceOneway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHILDPRICE_ONEWAY");
-
-                entity.Property(e => e.ChildpriceTwoway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("CHILDPRICE_TWOWAY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
                 entity.Property(e => e.Departuredays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("DEPARTUREDAYS")
                     .IsFixedLength();
 
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
+                entity.Property(e => e.Pricesort).HasComputedColumnSql("(case when [VEHICLETYPEID] IS NOT NULL then (4) else (0) end+((((((case when [SELLFROM] IS NOT NULL then (1) else (0) end+case when [SELLTO] IS NOT NULL then (1) else (0) end)+case when [TICKETDATEFROM] IS NOT NULL then (1) else (0) end)+case when [TICKETDATETO] IS NOT NULL then (1) else (0) end)+case when [ARRIVALDAYS] IS NOT NULL then (1) else (0) end)+case when [DEPARTUREDAYS] IS NOT NULL then (1) else (0) end)+case when [SELLDAYS] IS NOT NULL then (1) else (0) end))", true);
 
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Fromlocationid).HasColumnName("FROMLOCATIONID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.Pricesort)
-                    .HasColumnName("PRICESORT")
-                    .HasComputedColumnSql("(case when [VEHICLETYPEID] IS NOT NULL then (4) else (0) end+((((((case when [SELLFROM] IS NOT NULL then (1) else (0) end+case when [SELLTO] IS NOT NULL then (1) else (0) end)+case when [TICKETDATEFROM] IS NOT NULL then (1) else (0) end)+case when [TICKETDATETO] IS NOT NULL then (1) else (0) end)+case when [ARRIVALDAYS] IS NOT NULL then (1) else (0) end)+case when [DEPARTUREDAYS] IS NOT NULL then (1) else (0) end)+case when [SELLDAYS] IS NOT NULL then (1) else (0) end))", true);
-
-                entity.Property(e => e.Pricetype)
-                    .HasColumnName("PRICETYPE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Providerid).HasColumnName("PROVIDERID");
+                entity.Property(e => e.Pricetype).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.Selldays)
-                    .HasMaxLength(7)
                     .IsUnicode(false)
-                    .HasColumnName("SELLDAYS")
                     .IsFixedLength();
 
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Ticketdatefrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TICKETDATEFROM");
-
-                entity.Property(e => e.Ticketdateto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TICKETDATETO");
-
-                entity.Property(e => e.Tolocationid).HasColumnName("TOLOCATIONID");
-
-                entity.Property(e => e.Useinbasket).HasColumnName("USEINBASKET");
-
-                entity.Property(e => e.Useonline)
-                    .HasColumnName("USEONLINE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.VehiclepriceOneway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("VEHICLEPRICE_ONEWAY");
-
-                entity.Property(e => e.VehiclepriceTwoway)
-                    .HasColumnType("decimal(19, 2)")
-                    .HasColumnName("VEHICLEPRICE_TWOWAY");
-
-                entity.Property(e => e.Vehicletype)
-                    .HasMaxLength(40)
-                    .HasColumnName("VEHICLETYPE");
-
-                entity.Property(e => e.Vehicletypeid).HasColumnName("VEHICLETYPEID");
+                entity.Property(e => e.Useonline).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TransferPricesAdduserNavigation)
@@ -13156,38 +5105,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TRANSFER__3214EC26E0C4BD3E")
                     .IsClustered(false);
 
-                entity.ToTable("TRANSFER_PROVIDERS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(170)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.TransferProvidersAdduserNavigation)
@@ -13213,21 +5133,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__TURNIKE__686C874524E067A2")
                     .IsClustered(false);
 
-                entity.ToTable("TURNIKE");
-
-                entity.HasIndex(e => new { e.Corpid, e.Gatenumber }, "UQ__TURNIKE__7049794427ADDDCD")
-                    .IsUnique();
-
-                entity.Property(e => e.Gatenumber)
-                    .HasMaxLength(30)
-                    .HasColumnName("GATENUMBER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Direction)
-                    .IsRequired()
-                    .HasColumnName("DIRECTION")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Direction).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.Turnike)
@@ -13242,26 +5148,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__USER_HIS__3214EC261AE2A58D")
                     .IsClustered(false);
 
-                entity.ToTable("USER_HISTORY");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Corptid).HasColumnName("CORPTID");
-
-                entity.Property(e => e.Ipaddress)
-                    .HasMaxLength(25)
-                    .HasColumnName("IPADDRESS");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.UserHistory)
@@ -13272,30 +5161,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<UserProjectDetails>(entity =>
             {
-                entity.ToTable("USER_PROJECT_DETAILS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.ProjectGroupdetailid).HasColumnName("PROJECT_GROUPDETAILID");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.ProjectGroupdetail)
                     .WithMany(p => p.UserProjectDetails)
@@ -13305,33 +5173,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<UserProjects>(entity =>
             {
-                entity.ToTable("USER_PROJECTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => new { e.Userid, e.ProjectGroupid }, "IX_USER_PROJECTS")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.ProjectGroup)
                     .WithMany(p => p.UserProjects)
@@ -13341,17 +5185,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<UserRoleRequestStatus>(entity =>
             {
-                entity.ToTable("USER_ROLE_REQUEST_STATUS");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Allow).HasColumnName("ALLOW");
-
-                entity.Property(e => e.Roleid).HasColumnName("ROLEID");
-
-                entity.Property(e => e.Statuid).HasColumnName("STATUID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Role)
                     .WithMany(p => p.UserRoleRequestStatus)
@@ -13368,32 +5202,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<UserRoles>(entity =>
             {
-                entity.ToTable("USER_ROLES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Moduleid).HasColumnName("MODULEID");
-
-                entity.Property(e => e.Roleid).HasColumnName("ROLEID");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Role)
                     .WithMany(p => p.UserRoles)
@@ -13408,70 +5219,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<Users>(entity =>
             {
-                entity.ToTable("USERS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Moduleid, "IX_USERS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Username, "IX_USERS_1")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(100)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(201)
-                    .HasColumnName("FULLNAME")
-                    .HasComputedColumnSql("((isnull([FIRSTNAME],'')+' ')+isnull([LASTNAME],''))", false);
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(100)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.Moduleid).HasColumnName("MODULEID");
-
-                entity.Property(e => e.MustchangepaswordNextlogon).HasColumnName("MUSTCHANGEPASWORD_NEXTLOGON");
-
-                entity.Property(e => e.Password)
-                    .HasMaxLength(100)
-                    .HasColumnName("PASSWORD");
-
-                entity.Property(e => e.Systemadmin).HasColumnName("SYSTEMADMIN");
-
-                entity.Property(e => e.Tel1).HasColumnName("TEL1");
-
-                entity.Property(e => e.Tel2).HasColumnName("TEL2");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Fullname).HasComputedColumnSql("((isnull([FIRSTNAME],'')+' ')+isnull([LASTNAME],''))", false);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.InverseAdduserNavigation)
@@ -13497,21 +5249,7 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__USERS_CU__3214EC264938BA04")
                     .IsClustered(false);
 
-                entity.ToTable("USERS_CUSTOMAUTH");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AllowbutgetOnreelgrid).HasColumnName("ALLOWBUTGET_ONREELGRID");
-
-                entity.Property(e => e.AllowclientInvoiceIntegration).HasColumnName("ALLOWCLIENT_INVOICE_INTEGRATION");
-
-                entity.Property(e => e.ExternalPassword)
-                    .HasMaxLength(50)
-                    .HasColumnName("EXTERNAL_PASSWORD");
-
-                entity.Property(e => e.Userid).HasColumnName("USERID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.UsersCustomauth)
@@ -13525,61 +5263,17 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VEHICLET__3214EC26E4D43FAB")
                     .IsClustered(false);
 
-                entity.ToTable("VEHICLETYPES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Aircondition)
-                    .IsRequired()
-                    .HasColumnName("AIRCONDITION")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Aircondition).HasDefaultValueSql("((1))");
 
                 entity.Property(e => e.BaggageCapacity)
-                    .HasMaxLength(10)
-                    .HasColumnName("BAGGAGE_CAPACITY")
                     .HasDefaultValueSql("((3))")
                     .IsFixedLength();
 
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(70)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(250)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.PersonCount)
-                    .HasColumnName("PERSON_COUNT")
-                    .HasDefaultValueSql("((4))");
-
-                entity.Property(e => e.SpecialCode)
-                    .HasMaxLength(15)
-                    .HasColumnName("SPECIAL_CODE");
-
-                entity.Property(e => e.Vehicletype)
-                    .HasMaxLength(40)
-                    .HasColumnName("VEHICLETYPE");
+                entity.Property(e => e.PersonCount).HasDefaultValueSql("((4))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VehicletypesAdduserNavigation)
@@ -13607,63 +5301,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPos>(entity =>
             {
-                entity.ToTable("VIRTUAL_POS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Corpid).HasDefaultValueSql("('183D3B34-92F3-4A9B-B976-60F68FD1519B')");
 
-                entity.Property(e => e.AccInvCode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ACC_INV_CODE");
-
-                entity.Property(e => e.AccPayCode)
-                    .HasMaxLength(30)
-                    .HasColumnName("ACC_PAY_CODE");
-
-                entity.Property(e => e.BinnumberName)
-                    .HasMaxLength(50)
-                    .HasColumnName("BINNUMBER_NAME");
-
-                entity.Property(e => e.Class)
-                    .HasMaxLength(150)
-                    .HasColumnName("CLASS");
-
-                entity.Property(e => e.Corpid)
-                    .HasColumnName("CORPID")
-                    .HasDefaultValueSql("('183D3B34-92F3-4A9B-B976-60F68FD1519B')");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Fontcolor)
-                    .HasMaxLength(20)
-                    .HasColumnName("FONTCOLOR");
-
-                entity.Property(e => e.Forecolor)
-                    .HasMaxLength(20)
-                    .HasColumnName("FORECOLOR");
-
-                entity.Property(e => e.Iconurl)
-                    .HasMaxLength(250)
-                    .HasColumnName("ICONURL");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(150)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Xmlpassword)
-                    .HasMaxLength(150)
-                    .HasColumnName("XMLPASSWORD");
-
-                entity.Property(e => e.Xmlusername)
-                    .HasMaxLength(150)
-                    .HasColumnName("XMLUSERNAME");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.Corp)
                     .WithMany(p => p.VirtualPos)
@@ -13674,38 +5316,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosAccountInstalments>(entity =>
             {
-                entity.ToTable("VIRTUAL_POS_ACCOUNT_INSTALMENTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Accountid).HasColumnName("ACCOUNTID");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.BankCommission).HasColumnName("BANK_COMMISSION");
-
-                entity.Property(e => e.Commission).HasColumnName("COMMISSION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Expiryday).HasColumnName("EXPIRYDAY");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Offset).HasColumnName("OFFSET");
-
-                entity.Property(e => e.Plus).HasColumnName("PLUS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.Account)
                     .WithMany(p => p.VirtualPosAccountInstalments)
@@ -13726,84 +5339,11 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosAccounts>(entity =>
             {
-                entity.ToTable("VIRTUAL_POS_ACCOUNTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Accountname)
-                    .HasMaxLength(50)
-                    .HasColumnName("ACCOUNTNAME");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.BinnumberName)
-                    .HasMaxLength(50)
-                    .HasColumnName("BINNUMBER_NAME");
-
-                entity.Property(e => e.Clientid)
-                    .HasMaxLength(50)
-                    .HasColumnName("CLIENTID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.EntHotelid)
-                    .HasMaxLength(25)
-                    .HasColumnName("ENT_HOTELID");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.InstalmentMerge).HasColumnName("INSTALMENT_MERGE");
-
-                entity.Property(e => e.IsforeignPos).HasColumnName("ISFOREIGN_POS");
-
-                entity.Property(e => e.Params)
-                    .HasMaxLength(350)
-                    .HasColumnName("PARAMS");
-
-                entity.Property(e => e.Password)
-                    .HasMaxLength(50)
-                    .HasColumnName("PASSWORD");
-
-                entity.Property(e => e.Password3d)
-                    .HasMaxLength(50)
-                    .HasColumnName("PASSWORD_3D");
-
-                entity.Property(e => e.Posid).HasColumnName("POSID");
-
-                entity.Property(e => e.Posturl)
-                    .HasMaxLength(250)
-                    .HasColumnName("POSTURL");
-
-                entity.Property(e => e.Terminalid)
-                    .HasMaxLength(50)
-                    .HasColumnName("TERMINALID");
-
-                entity.Property(e => e.Use3d)
-                    .HasColumnName("USE3D")
-                    .HasDefaultValueSql("((1))");
+                entity.Property(e => e.Use3d).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosAccountsAdduserNavigation)
@@ -13835,26 +5375,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC263FC4CE80")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_ACCOUNTS_CURCODES");
-
-                entity.HasIndex(e => new { e.Accountid, e.Curcode }, "UQ__VIRTUAL___0ACA257EBD9DAF3E")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Accountid).HasColumnName("ACCOUNTID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Schemes)
-                    .HasMaxLength(220)
-                    .HasColumnName("SCHEMES");
 
                 entity.HasOne(d => d.Account)
                     .WithMany(p => p.VirtualPosAccountsCurcodes)
@@ -13868,86 +5393,15 @@ namespace Asisia.webapi.Models.Db
                     .HasConstraintName("FK__VIRTUAL_P__CURCO__4A6E022D");
             });
 
-            modelBuilder.Entity<VirtualPosBinnumbers>(entity =>
-            {
-                entity.ToTable("VIRTUAL_POS_BINNUMBERS");
-
-                entity.HasIndex(e => e.Binno, "IX_VIRTUAL_POS_BINNUMBERS");
-
-                entity.HasIndex(e => e.Binno, "UQ__VIRTUAL___5D92CF0E5E919BD3")
-                    .IsUnique();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Bankname)
-                    .HasMaxLength(100)
-                    .HasColumnName("BANKNAME");
-
-                entity.Property(e => e.Binno)
-                    .HasMaxLength(7)
-                    .HasColumnName("BINNO");
-
-                entity.Property(e => e.Schema)
-                    .HasMaxLength(30)
-                    .HasColumnName("SCHEMA");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(30)
-                    .HasColumnName("TYPE");
-            });
-
             modelBuilder.Entity<VirtualPosDefaults>(entity =>
             {
                 entity.HasKey(e => e.Id)
                     .HasName("PK__VIRTUAL___3214EC26FBDA7D1D")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_DEFAULTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.AmexExPosid).HasColumnName("AMEX_EX_POSID");
-
-                entity.Property(e => e.AmexPosid).HasColumnName("AMEX_POSID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.JcbExPosid).HasColumnName("JCB_EX_POSID");
-
-                entity.Property(e => e.JcbPosid).HasColumnName("JCB_POSID");
-
-                entity.Property(e => e.MaestroExPosid).HasColumnName("MAESTRO_EX_POSID");
-
-                entity.Property(e => e.MaestroPosid).HasColumnName("MAESTRO_POSID");
-
-                entity.Property(e => e.MasterExPosid).HasColumnName("MASTER_EX_POSID");
-
-                entity.Property(e => e.MasterPosid).HasColumnName("MASTER_POSID");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
-
-                entity.Property(e => e.UnionpayExPosid).HasColumnName("UNIONPAY_EX_POSID");
-
-                entity.Property(e => e.UnionpayPosid).HasColumnName("UNIONPAY_POSID");
-
-                entity.Property(e => e.VisaExPosid).HasColumnName("VISA_EX_POSID");
-
-                entity.Property(e => e.VisaPosid).HasColumnName("VISA_POSID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosDefaultsAdduserNavigation)
@@ -14040,53 +5494,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC2631497AA5")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_DEP_ACCOUNTS");
-
-                entity.HasIndex(e => e.Iban, "UQ__VIRTUAL___8235CCBCC71928CD")
-                    .IsUnique();
-
-                entity.HasIndex(e => new { e.Posid, e.BrandCode, e.AccountNo }, "UQ__VIRTUAL___FB82C868314D95A7")
-                    .IsUnique();
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.AccountNo)
-                    .HasMaxLength(35)
-                    .HasColumnName("ACCOUNT_NO");
-
-                entity.Property(e => e.BrandCode)
-                    .HasMaxLength(25)
-                    .HasColumnName("BRAND_CODE");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(100)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Firmname)
-                    .HasMaxLength(250)
-                    .HasColumnName("FIRMNAME");
-
-                entity.Property(e => e.Iban)
-                    .HasMaxLength(35)
-                    .HasColumnName("IBAN");
-
-                entity.Property(e => e.Posid).HasColumnName("POSID");
-
-                entity.Property(e => e.Swiftcode)
-                    .HasMaxLength(50)
-                    .HasColumnName("SWIFTCODE");
             });
 
             modelBuilder.Entity<VirtualPosDepPayments>(entity =>
@@ -14095,72 +5507,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC26FF40B2D4")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_DEP_PAYMENTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_DEP_PAYMENTS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_DEP_PAYMENTS_1");
-
-                entity.HasIndex(e => e.Editdate, "IX_VIRTUAL_POS_DEP_PAYMENTS_2");
-
-                entity.HasIndex(e => e.Editdate, "IX_VIRTUAL_POS_DEP_PAYMENTS_3");
-
-                entity.HasIndex(e => e.Status, "IX_VIRTUAL_POS_DEP_PAYMENTS_4");
-
-                entity.HasIndex(e => e.Transfercode, "IX_VIRTUAL_POS_DEP_PAYMENTS_5");
-
-                entity.HasIndex(e => e.Isdeleted, "IX_VIRTUAL_POS_DEP_PAYMENTS_6");
-
-                entity.HasIndex(e => e.Intid, "IX_VIRTUAL_POS_DEP_PAYMENTS_7");
-
-                entity.HasIndex(e => e.Entid, "IX_VIRTUAL_POS_DEP_PAYMENTS_8");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Banktransactionid)
-                    .HasMaxLength(50)
-                    .HasColumnName("BANKTRANSACTIONID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Posaccountid).HasColumnName("POSACCOUNTID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Transfercode)
-                    .HasMaxLength(10)
-                    .HasColumnName("TRANSFERCODE");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosDepPaymentsAdduserNavigation)
@@ -14197,41 +5548,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC261F2CCB2B")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_DEP_PAYMENTS_CANCEL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Entid, "IX_VIRTUAL_POS_DEP_PAYMENTS_CANCEL");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Isrefund).HasColumnName("ISREFUND");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Success).HasColumnName("SUCCESS");
+                entity.Property(e => e.Editdate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosDepPaymentsCancelAdduserNavigation)
@@ -14262,48 +5583,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC26319DB2DB")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENT_EMAILS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(200)
-                    .HasColumnName("EMAIL");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(70)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(70)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.ResultMail)
-                    .HasColumnName("RESULT_MAIL")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Tempid).HasColumnName("TEMPID");
+                entity.Property(e => e.ResultMail).HasDefaultValueSql("((0))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentEmailsAdduserNavigation)
@@ -14334,42 +5618,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC26B5BF55CC")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENT_MESSAGE_TEMPS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Errortext).HasColumnName("ERRORTEXT");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Kind).HasColumnName("KIND");
-
-                entity.Property(e => e.Messagetext).HasColumnName("MESSAGETEXT");
-
-                entity.Property(e => e.Successtext).HasColumnName("SUCCESSTEXT");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentMessageTempsAdduserNavigation)
@@ -14395,117 +5646,23 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIR_REQTUAL___3214EC2615C97ABF")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENT_REQUESTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENT_REQUESTS");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENT_REQUESTS_1");
-
-                entity.HasIndex(e => new { e.Adddate, e.Isdeleted, e.Corpid }, "IX_VIRTUAL_POS_PAYMENT_REQUESTS_2");
-
-                entity.HasIndex(e => e.Isdeleted, "IX_VIRTUAL_POS_PAYMENT_REQUESTS_3");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.CandivPayment)
-                    .HasColumnName("CANDIV_PAYMENT")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.CandivPayment).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Emailtempid).HasColumnName("EMAILTEMPID");
-
-                entity.Property(e => e.Emailtext).HasColumnName("EMAILTEXT");
-
-                entity.Property(e => e.Fdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("FDATE");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
 
                 entity.Property(e => e.Langcode)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANGCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.PaymentDescription).HasColumnName("PAYMENT_DESCRIPTION");
+                entity.Property(e => e.Piece).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.PaymentErrortext).HasColumnName("PAYMENT_ERRORTEXT");
-
-                entity.Property(e => e.PaymentSuccesstext).HasColumnName("PAYMENT_SUCCESSTEXT");
-
-                entity.Property(e => e.PaymentText).HasColumnName("PAYMENT_TEXT");
-
-                entity.Property(e => e.Paymenttempid).HasColumnName("PAYMENTTEMPID");
-
-                entity.Property(e => e.Piece)
-                    .HasColumnName("PIECE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Portaluid).HasColumnName("PORTALUID");
-
-                entity.Property(e => e.Price).HasColumnName("PRICE");
-
-                entity.Property(e => e.Pricechangeable).HasColumnName("PRICECHANGEABLE");
-
-                entity.Property(e => e.Resnumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("RESNUMBER");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.SmsErrortext).HasColumnName("SMS_ERRORTEXT");
-
-                entity.Property(e => e.SmsSuccesstext).HasColumnName("SMS_SUCCESSTEXT");
-
-                entity.Property(e => e.SmsText1).HasColumnName("SMS_TEXT");
-
-                entity.Property(e => e.Smstempid).HasColumnName("SMSTEMPID");
-
-                entity.Property(e => e.Smstext).HasColumnName("SMSTEXT");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(150)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Useemail)
-                    .IsRequired()
-                    .HasColumnName("USEEMAIL")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Useinstallments).HasColumnName("USEINSTALLMENTS");
-
-                entity.Property(e => e.Usesms).HasColumnName("USESMS");
+                entity.Property(e => e.Useemail).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentRequestsAdduserNavigation)
@@ -14551,32 +5708,9 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosPaymentRequestsNotes>(entity =>
             {
-                entity.ToTable("VIRTUAL_POS_PAYMENT_REQUESTS_NOTES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Note).HasColumnName("NOTE");
-
-                entity.Property(e => e.Nottype).HasColumnName("NOTTYPE");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentRequestsNotesAdduserNavigation)
@@ -14602,99 +5736,23 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC2615C97ABF")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENT_TEMPS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.CandivPayment)
-                    .HasColumnName("CANDIV_PAYMENT")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.CandivPayment).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(150)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Emailtempid).HasColumnName("EMAILTEMPID");
-
-                entity.Property(e => e.Emailtext).HasColumnName("EMAILTEXT");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
 
                 entity.Property(e => e.Langcode)
-                    .HasMaxLength(6)
                     .IsUnicode(false)
-                    .HasColumnName("LANGCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.PaymentDescription).HasColumnName("PAYMENT_DESCRIPTION");
+                entity.Property(e => e.Piece).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.PaymentErrortext).HasColumnName("PAYMENT_ERRORTEXT");
-
-                entity.Property(e => e.PaymentSuccesstext).HasColumnName("PAYMENT_SUCCESSTEXT");
-
-                entity.Property(e => e.PaymentText).HasColumnName("PAYMENT_TEXT");
-
-                entity.Property(e => e.Piece)
-                    .HasColumnName("PIECE")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Price).HasColumnName("PRICE");
-
-                entity.Property(e => e.Pricechangeable).HasColumnName("PRICECHANGEABLE");
-
-                entity.Property(e => e.Resnumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("RESNUMBER");
-
-                entity.Property(e => e.SendMailsOnlyCreateuser).HasColumnName("SEND_MAILS_ONLY_CREATEUSER");
-
-                entity.Property(e => e.SmsErrortext).HasColumnName("SMS_ERRORTEXT");
-
-                entity.Property(e => e.SmsSuccesstext).HasColumnName("SMS_SUCCESSTEXT");
-
-                entity.Property(e => e.SmsText1).HasColumnName("SMS_TEXT");
-
-                entity.Property(e => e.Smstempid).HasColumnName("SMSTEMPID");
-
-                entity.Property(e => e.Smstext).HasColumnName("SMSTEXT");
-
-                entity.Property(e => e.Title)
-                    .HasMaxLength(150)
-                    .HasColumnName("TITLE");
-
-                entity.Property(e => e.Useemail)
-                    .IsRequired()
-                    .HasColumnName("USEEMAIL")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Useinstallments).HasColumnName("USEINSTALLMENTS");
-
-                entity.Property(e => e.Usesms).HasColumnName("USESMS");
+                entity.Property(e => e.Useemail).HasDefaultValueSql("((1))");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentTempsAdduserNavigation)
@@ -14735,30 +5793,9 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC266D8BF4C0")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENT_VPOSES");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Installmentid).HasColumnName("INSTALLMENTID");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.Tempid).HasColumnName("TEMPID");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentVposesAdduserNavigation)
@@ -14790,163 +5827,19 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosPayments>(entity =>
             {
-                entity.ToTable("VIRTUAL_POS_PAYMENTS");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Isdeleted, "IX_VIRTUAL_POS_PAYMENTS");
-
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENTS_1");
-
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENTS_2");
-
-                entity.HasIndex(e => e.Firststep, "IX_VIRTUAL_POS_PAYMENTS_3");
-
-                entity.HasIndex(e => e.Void, "IX_VIRTUAL_POS_PAYMENTS_4");
-
-                entity.HasIndex(e => e.Refund, "IX_VIRTUAL_POS_PAYMENTS_5");
-
-                entity.HasIndex(e => e.Entid, "IX_VIRTUAL_POS_PAYMENTS_6");
-
-                entity.HasIndex(e => new { e.Isdeleted, e.PaymentRequestid, e.Status }, "IX_VIRTUAL_POS_PAYMENTS_ISDELETED_PAYMENT_REQUESTID_STATUS");
-
-                entity.HasIndex(e => new { e.Status, e.Isdeleted }, "MIS_IDX_01");
-
-                entity.HasIndex(e => e.Isdeleted, "MIS_IDX_2");
-
-                entity.HasIndex(e => e.Isdeleted, "MIS_IDX_VIRTUAL_POS_PAYMENTS_01");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Authcode)
-                    .HasMaxLength(200)
-                    .HasColumnName("AUTHCODE");
-
-                entity.Property(e => e.BasketDescription).HasColumnName("BASKET_DESCRIPTION");
-
-                entity.Property(e => e.Cardnumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("CARDNUMBER");
-
-                entity.Property(e => e.Cardowner)
-                    .HasMaxLength(200)
-                    .HasColumnName("CARDOWNER");
-
-                entity.Property(e => e.CompletebasketAftersuccess)
-                    .HasColumnName("COMPLETEBASKET_AFTERSUCCESS")
-                    .HasDefaultValueSql("((0))");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
+                entity.Property(e => e.CompletebasketAftersuccess).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Cvv)
-                    .HasMaxLength(5)
-                    .HasColumnName("CVV");
+                entity.Property(e => e.Instalment).HasDefaultValueSql("((1))");
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(100)
-                    .HasColumnName("DESCRIPTION");
+                entity.Property(e => e.Intid).ValueGeneratedOnAdd();
 
-                entity.Property(e => e.Eci)
-                    .HasMaxLength(50)
-                    .HasColumnName("ECI");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Firststep).HasColumnName("FIRSTSTEP");
-
-                entity.Property(e => e.Fixit).HasColumnName("FIXIT");
-
-                entity.Property(e => e.Instalment)
-                    .HasColumnName("INSTALMENT")
-                    .HasDefaultValueSql("((1))");
-
-                entity.Property(e => e.Intid)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isintegrated)
-                    .HasColumnName("ISINTEGRATED")
-                    .HasComputedColumnSql("(case when [ENTID] IS NULL then (0) else (1) end)", true);
-
-                entity.Property(e => e.LastAmount).HasColumnName("LAST_AMOUNT");
-
-                entity.Property(e => e.PayerAuthcode)
-                    .HasMaxLength(50)
-                    .HasColumnName("PAYER_AUTHCODE");
-
-                entity.Property(e => e.PayerTnxid)
-                    .HasMaxLength(50)
-                    .HasColumnName("PAYER_TNXID");
-
-                entity.Property(e => e.PaymentRequestid).HasColumnName("PAYMENT_REQUESTID");
-
-                entity.Property(e => e.Posaccountid).HasColumnName("POSACCOUNTID");
-
-                entity.Property(e => e.Posinstalmentid).HasColumnName("POSINSTALMENTID");
-
-                entity.Property(e => e.Postauth).HasColumnName("POSTAUTH");
-
-                entity.Property(e => e.Preauth).HasColumnName("PREAUTH");
-
-                entity.Property(e => e.Refund).HasColumnName("REFUND");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Retrefnumber)
-                    .HasMaxLength(200)
-                    .HasColumnName("RETREFNUMBER");
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Statustext)
-                    .HasMaxLength(500)
-                    .HasColumnName("STATUSTEXT");
-
-                entity.Property(e => e.Storetype)
-                    .HasMaxLength(30)
-                    .HasColumnName("STORETYPE");
-
-                entity.Property(e => e.Trantype)
-                    .HasMaxLength(15)
-                    .HasColumnName("TRANTYPE");
-
-                entity.Property(e => e.Validdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("VALIDDATE");
-
-                entity.Property(e => e.Validmonth).HasColumnName("VALIDMONTH");
-
-                entity.Property(e => e.Validyear).HasColumnName("VALIDYEAR");
-
-                entity.Property(e => e.Void).HasColumnName("VOID");
+                entity.Property(e => e.Isintegrated).HasComputedColumnSql("(case when [ENTID] IS NULL then (0) else (1) end)", true);
 
                 entity.HasOne(d => d.AdduserNavigation)
                     .WithMany(p => p.VirtualPosPaymentsAdduserNavigation)
@@ -15005,51 +5898,11 @@ namespace Asisia.webapi.Models.Db
                     .HasName("PK__VIRTUAL___3214EC2696B31157")
                     .IsClustered(false);
 
-                entity.ToTable("VIRTUAL_POS_PAYMENTS_CANCEL");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
-                entity.HasIndex(e => e.Success, "IX_VIRTUAL_POS_PAYMENTS_CANCEL");
+                entity.Property(e => e.Adddate).HasDefaultValueSql("(getdate())");
 
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENTS_CANCEL_1");
-
-                entity.HasIndex(e => e.Adddate, "IX_VIRTUAL_POS_PAYMENTS_CANCEL_2");
-
-                entity.HasIndex(e => new { e.Paymentid, e.Success }, "IX_VIRTUAL_POS_PAYMENTS_CANCEL_3");
-
-                entity.HasIndex(e => e.Entid, "IX_VIRTUAL_POS_PAYMENTS_CANCEL_4");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE")
-                    .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Entid)
-                    .HasMaxLength(100)
-                    .HasColumnName("ENTID");
-
-                entity.Property(e => e.Isrefund).HasColumnName("ISREFUND");
-
-                entity.Property(e => e.Isvoid).HasColumnName("ISVOID");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Success).HasColumnName("SUCCESS");
+                entity.Property(e => e.Editdate).HasDefaultValueSql("(getdate())");
 
                 entity.HasOne(d => d.RequestDetail)
                     .WithMany(p => p.VirtualPosPaymentsCancel)
@@ -15059,17 +5912,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosSwap>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("VIRTUAL_POS_SWAP");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Posid1).HasColumnName("POSID1");
-
-                entity.Property(e => e.Posid2).HasColumnName("POSID2");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Posid1Navigation)
                     .WithMany()
@@ -15086,19 +5929,7 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VirtualPosbinnames>(entity =>
             {
-                entity.HasNoKey();
-
-                entity.ToTable("VIRTUAL_POSBINNAMES");
-
-                entity.Property(e => e.BinnumberName)
-                    .HasMaxLength(50)
-                    .HasColumnName("BINNUMBER_NAME");
-
-                entity.Property(e => e.Id)
-                    .HasColumnName("ID")
-                    .HasDefaultValueSql("(newid())");
-
-                entity.Property(e => e.Posid).HasColumnName("POSID");
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
 
                 entity.HasOne(d => d.Pos)
                     .WithMany()
@@ -15109,1420 +5940,202 @@ namespace Asisia.webapi.Models.Db
 
             modelBuilder.Entity<VwBasketInfo>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_BASKET_INFO");
 
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.AllowSingleMen).HasColumnName("ALLOW_SINGLE_MEN");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.BabyMaxage).HasColumnName("BABY_MAXAGE");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(25)
-                    .HasColumnName("BOARDTYPE");
-
-                entity.Property(e => e.Boardtypeid).HasColumnName("BOARDTYPEID");
-
-                entity.Property(e => e.CancelationDays).HasColumnName("CANCELATION_DAYS");
-
-                entity.Property(e => e.CancelationRate).HasColumnName("CANCELATION_RATE");
-
-                entity.Property(e => e.CancellationWarrantyRate).HasColumnName("CANCELLATION_WARRANTY_RATE");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.ChdeMaxage).HasColumnName("CHDE_MAXAGE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.ChdyMaxage).HasColumnName("CHDY_MAXAGE");
-
-                entity.Property(e => e.Checkintime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CHECKINTIME");
-
-                entity.Property(e => e.Checkouttime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CHECKOUTTIME");
-
-                entity.Property(e => e.City)
-                    .HasMaxLength(70)
-                    .HasColumnName("CITY");
-
-                entity.Property(e => e.Correlationid).HasColumnName("CORRELATIONID");
-
-                entity.Property(e => e.Country)
-                    .HasMaxLength(70)
-                    .HasColumnName("COUNTRY");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.DGrandTotal).HasColumnName("D_GRAND_TOTAL");
-
-                entity.Property(e => e.Date1)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE1");
-
-                entity.Property(e => e.Date2)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE2");
-
-                entity.Property(e => e.DiscountRate).HasColumnName("DISCOUNT_RATE");
-
-                entity.Property(e => e.DiscountReq).HasColumnName("DISCOUNT_REQ");
-
-                entity.Property(e => e.DiscountResult).HasColumnName("DISCOUNT_RESULT");
-
-                entity.Property(e => e.ExtraTotal).HasColumnName("EXTRA_TOTAL");
-
-                entity.Property(e => e.Fromloc)
-                    .HasMaxLength(170)
-                    .HasColumnName("FROMLOC");
-
-                entity.Property(e => e.Fromlocationid).HasColumnName("FROMLOCATIONID");
-
-                entity.Property(e => e.GrandTotal).HasColumnName("GRAND_TOTAL");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Marketid).HasColumnName("MARKETID");
-
-                entity.Property(e => e.MenAccommodationForbidden).HasColumnName("MEN_ACCOMMODATION_FORBIDDEN");
-
-                entity.Property(e => e.PayAtPlace).HasColumnName("PAY_AT_PLACE");
-
-                entity.Property(e => e.PaymentRate).HasColumnName("PAYMENT_RATE");
-
-                entity.Property(e => e.Pnr1)
-                    .HasMaxLength(15)
-                    .HasColumnName("PNR1");
-
-                entity.Property(e => e.Pnr2)
-                    .HasMaxLength(15)
-                    .HasColumnName("PNR2");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(200)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Promotion)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROMOTION");
-
-                entity.Property(e => e.Promotioncode)
-                    .HasMaxLength(255)
-                    .HasColumnName("PROMOTIONCODE");
-
-                entity.Property(e => e.Promotionid).HasColumnName("PROMOTIONID");
-
-                entity.Property(e => e.Ratecodeid).HasColumnName("RATECODEID");
-
-                entity.Property(e => e.Ratetype)
-                    .HasMaxLength(50)
-                    .HasColumnName("RATETYPE");
-
-                entity.Property(e => e.Ratetypeid).HasColumnName("RATETYPEID");
 
                 entity.Property(e => e.ReqCurcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("REQ_CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Requestdetailid).HasColumnName("REQUESTDETAILID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.ReservationSettingsid).HasColumnName("RESERVATION_SETTINGSID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(50)
-                    .HasColumnName("ROOMTYPE");
-
-                entity.Property(e => e.Roomtypeid).HasColumnName("ROOMTYPEID");
-
-                entity.Property(e => e.Roundtrip).HasColumnName("ROUNDTRIP");
-
-                entity.Property(e => e.SpecialCode)
-                    .HasMaxLength(15)
-                    .HasColumnName("SPECIAL_CODE");
-
-                entity.Property(e => e.Stars).HasColumnName("STARS");
-
-                entity.Property(e => e.Status).HasColumnName("STATUS");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Thumbnailurl)
-                    .HasMaxLength(350)
-                    .HasColumnName("THUMBNAILURL");
-
-                entity.Property(e => e.Toloc)
-                    .HasMaxLength(170)
-                    .HasColumnName("TOLOC");
-
-                entity.Property(e => e.Tolocationid).HasColumnName("TOLOCATIONID");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
-
-                entity.Property(e => e.TotalPayments).HasColumnName("TOTAL_PAYMENTS");
-
-                entity.Property(e => e.TransferPriceid).HasColumnName("TRANSFER_PRICEID");
-
-                entity.Property(e => e.Validdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("VALIDDATE");
-
-                entity.Property(e => e.Validday).HasColumnName("VALIDDAY");
-
-                entity.Property(e => e.Vehicle)
-                    .HasMaxLength(70)
-                    .HasColumnName("VEHICLE");
-
-                entity.Property(e => e.VehiclePersonCount).HasColumnName("VEHICLE_PERSON_COUNT");
-
-                entity.Property(e => e.Vehicleid).HasColumnName("VEHICLEID");
-
-                entity.Property(e => e.Vehicletype)
-                    .HasMaxLength(40)
-                    .HasColumnName("VEHICLETYPE");
             });
 
             modelBuilder.Entity<VwBasketPayments>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_BASKET_PAYMENTS");
 
-                entity.Property(e => e.Accountname)
-                    .HasMaxLength(50)
-                    .HasColumnName("ACCOUNTNAME");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Authcode)
-                    .HasMaxLength(200)
-                    .HasColumnName("AUTHCODE");
-
-                entity.Property(e => e.Camount).HasColumnName("CAMOUNT");
-
-                entity.Property(e => e.CancelAmount).HasColumnName("CANCEL_AMOUNT");
-
-                entity.Property(e => e.Cardno)
-                    .HasMaxLength(24)
-                    .HasColumnName("CARDNO");
-
-                entity.Property(e => e.Cardowner)
-                    .HasMaxLength(200)
-                    .HasColumnName("CARDOWNER");
-
                 entity.Property(e => e.Ccurcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CCURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Ctotal).HasColumnName("CTOTAL");
 
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(200)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Instalment).HasColumnName("INSTALMENT");
-
-                entity.Property(e => e.Intid).HasColumnName("INTID");
-
-                entity.Property(e => e.LastAmount).HasColumnName("LAST_AMOUNT");
-
-                entity.Property(e => e.Paytpe).HasColumnName("PAYTPE");
-
-                entity.Property(e => e.Pos)
-                    .HasMaxLength(150)
-                    .HasColumnName("POS");
-
-                entity.Property(e => e.Postauth).HasColumnName("POSTAUTH");
-
-                entity.Property(e => e.Preauth).HasColumnName("PREAUTH");
-
-                entity.Property(e => e.Refund).HasColumnName("REFUND");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Retrefnumber)
-                    .HasMaxLength(200)
-                    .HasColumnName("RETREFNUMBER");
-
-                entity.Property(e => e.Statuid).HasColumnName("STATUID");
-
-                entity.Property(e => e.Storetype)
-                    .HasMaxLength(30)
-                    .HasColumnName("STORETYPE");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Terminalid)
-                    .HasMaxLength(50)
-                    .HasColumnName("TERMINALID");
-
-                entity.Property(e => e.Trantype)
-                    .HasMaxLength(15)
-                    .HasColumnName("TRANTYPE");
-
-                entity.Property(e => e.Void).HasColumnName("VOID");
             });
 
             modelBuilder.Entity<VwCallJobs>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_CALL_JOBS");
 
-                entity.Property(e => e.Callnumber).HasColumnName("CALLNUMBER");
-
-                entity.Property(e => e.Calltime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("CALLTIME");
-
-                entity.Property(e => e.Campaigncode)
-                    .HasMaxLength(100)
-                    .HasColumnName("CAMPAIGNCODE")
-                    .IsFixedLength();
-
-                entity.Property(e => e.Description).HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Dontcall).HasColumnName("DONTCALL");
-
-                entity.Property(e => e.Firstname)
-                    .HasMaxLength(70)
-                    .HasColumnName("FIRSTNAME");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(200)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Isfinished).HasColumnName("ISFINISHED");
-
-                entity.Property(e => e.Jobend).HasColumnName("jobend");
-
-                entity.Property(e => e.Jobid).HasColumnName("JOBID");
-
-                entity.Property(e => e.Jobstart).HasColumnName("jobstart");
+                entity.Property(e => e.Campaigncode).IsFixedLength();
 
                 entity.Property(e => e.Kind)
-                    .HasMaxLength(1)
                     .IsUnicode(false)
-                    .HasColumnName("KIND")
                     .IsFixedLength();
 
-                entity.Property(e => e.Lastname)
-                    .HasMaxLength(70)
-                    .HasColumnName("LASTNAME");
-
-                entity.Property(e => e.Maxtrycount).HasColumnName("MAXTRYCOUNT");
-
-                entity.Property(e => e.MaxtrycountBusy).HasColumnName("MAXTRYCOUNT_BUSY");
-
-                entity.Property(e => e.OutputExten)
-                    .HasMaxLength(150)
-                    .HasColumnName("OUTPUT_EXTEN");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Phonenumber)
-                    .HasMaxLength(50)
-                    .HasColumnName("PHONENUMBER");
-
-                entity.Property(e => e.Priority).HasColumnName("PRIORITY");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Queuelogid).HasColumnName("QUEUELOGID");
-
-                entity.Property(e => e.Reason)
-                    .HasMaxLength(33)
-                    .IsUnicode(false)
-                    .HasColumnName("REASON");
-
-                entity.Property(e => e.Sdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SDATE");
-
-                entity.Property(e => e.Sortfld)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SORTFLD");
-
-                entity.Property(e => e.State)
-                    .HasMaxLength(25)
-                    .HasColumnName("STATE");
-
-                entity.Property(e => e.Trycount).HasColumnName("TRYCOUNT");
-
-                entity.Property(e => e.TrycountBusy).HasColumnName("TRYCOUNT_BUSY");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Reason).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwCalljobReasons>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_CALLJOB_REASONS");
 
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Reason)
-                    .HasMaxLength(33)
-                    .IsUnicode(false)
-                    .HasColumnName("REASON");
+                entity.Property(e => e.Reason).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwCampaigns>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_CAMPAIGNS");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(100)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(100)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Enddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDDATE");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.Projectid).HasColumnName("PROJECTID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Startdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STARTDATE");
             });
 
             modelBuilder.Entity<VwHotelMarketCountry>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_HOTEL_MARKET_COUNTRY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Countrycode)
-                    .HasMaxLength(2)
-                    .HasColumnName("COUNTRYCODE");
-
-                entity.Property(e => e.Hotelid).HasColumnName("HOTELID");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
             });
 
             modelBuilder.Entity<VwIpcountrycodes>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_IPCOUNTRYCODES");
-
-                entity.Property(e => e.CountryCode)
-                    .HasMaxLength(2)
-                    .HasColumnName("country_code");
-
-                entity.Property(e => e.CountryName)
-                    .HasMaxLength(64)
-                    .HasColumnName("country_name");
             });
 
             modelBuilder.Entity<VwIplocations>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_IPLOCATIONS");
-
-                entity.Property(e => e.CityName)
-                    .HasMaxLength(128)
-                    .HasColumnName("city_name");
-
-                entity.Property(e => e.CountryCode)
-                    .HasMaxLength(2)
-                    .HasColumnName("country_code");
-
-                entity.Property(e => e.CountryName)
-                    .HasMaxLength(64)
-                    .HasColumnName("country_name");
-
-                entity.Property(e => e.IpFrom).HasColumnName("ip_from");
-
-                entity.Property(e => e.IpTo).HasColumnName("ip_to");
-
-                entity.Property(e => e.Latitude).HasColumnName("latitude");
-
-                entity.Property(e => e.Longitude).HasColumnName("longitude");
-
-                entity.Property(e => e.RegionName)
-                    .HasMaxLength(128)
-                    .HasColumnName("region_name");
             });
 
             modelBuilder.Entity<VwLocations>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_LOCATIONS");
 
-                entity.Property(e => e.Code)
-                    .HasMaxLength(5)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(170)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(8)
-                    .IsUnicode(false)
-                    .HasColumnName("TYPE");
+                entity.Property(e => e.Type).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwMobPaymentReport>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_MOB_PAYMENT_REPORT");
 
-                entity.Property(e => e.Authcode)
-                    .HasMaxLength(200)
-                    .HasColumnName("AUTHCODE");
-
-                entity.Property(e => e.CancelAmount).HasColumnName("CANCEL_AMOUNT");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Ctotal).HasColumnName("CTOTAL");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(200)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Intid).HasColumnName("INTID");
-
-                entity.Property(e => e.LastAmount).HasColumnName("LAST_AMOUNT");
-
-                entity.Property(e => e.Paytype)
-                    .HasMaxLength(9)
-                    .IsUnicode(false)
-                    .HasColumnName("PAYTYPE");
-
-                entity.Property(e => e.Personname)
-                    .HasMaxLength(212)
-                    .HasColumnName("PERSONNAME");
-
-                entity.Property(e => e.Pos)
-                    .HasMaxLength(150)
-                    .HasColumnName("POS");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(150)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.ProjectGroupdetail)
-                    .HasMaxLength(200)
-                    .HasColumnName("PROJECT_GROUPDETAIL");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Projectgroup)
-                    .HasMaxLength(150)
-                    .HasColumnName("PROJECTGROUP");
+                entity.Property(e => e.Paytype).IsUnicode(false);
 
                 entity.Property(e => e.Rcurcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("RCURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Resids)
-                    .HasMaxLength(100)
-                    .HasColumnName("RESIDS");
-
-                entity.Property(e => e.Statu)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATU");
-
-                entity.Property(e => e.Statuid).HasColumnName("STATUID");
-
-                entity.Property(e => e.Substatu)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATU");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
             });
 
             modelBuilder.Entity<VwProducts>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_PRODUCTS");
 
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(250)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Type)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("TYPE");
+                entity.Property(e => e.Type).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwProjectGroup>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_PROJECT_GROUP");
-
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Mergeclients).HasColumnName("MERGECLIENTS");
-
-                entity.Property(e => e.Name)
-                    .HasMaxLength(150)
-                    .HasColumnName("NAME");
-
-                entity.Property(e => e.Usealternates).HasColumnName("USEALTERNATES");
             });
 
             modelBuilder.Entity<VwPromotionCodes>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_PROMOTION_CODES");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
+                entity.Property(e => e.Discountkind).IsUnicode(false);
 
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
+                entity.Property(e => e.Discounttype).IsUnicode(false);
 
-                entity.Property(e => e.Code)
-                    .HasMaxLength(255)
-                    .HasColumnName("CODE");
+                entity.Property(e => e.Kind).IsUnicode(false);
 
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Definition)
-                    .HasMaxLength(150)
-                    .HasColumnName("DEFINITION");
-
-                entity.Property(e => e.Discountkind)
-                    .HasMaxLength(16)
-                    .IsUnicode(false)
-                    .HasColumnName("DISCOUNTKIND");
-
-                entity.Property(e => e.Discounttype)
-                    .HasMaxLength(15)
-                    .IsUnicode(false)
-                    .HasColumnName("DISCOUNTTYPE");
-
-                entity.Property(e => e.Editdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("EDITDATE");
-
-                entity.Property(e => e.Edituser).HasColumnName("EDITUSER");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Isdisabled).HasColumnName("ISDISABLED");
-
-                entity.Property(e => e.Kind)
-                    .HasMaxLength(14)
-                    .IsUnicode(false)
-                    .HasColumnName("KIND");
-
-                entity.Property(e => e.Sellfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLFROM");
-
-                entity.Property(e => e.Sellto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("SELLTO");
-
-                entity.Property(e => e.Stayfrom)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYFROM");
-
-                entity.Property(e => e.Stayto)
-                    .HasColumnType("datetime")
-                    .HasColumnName("STAYTO");
-
-                entity.Property(e => e.Usetype)
-                    .HasMaxLength(11)
-                    .IsUnicode(false)
-                    .HasColumnName("USETYPE");
+                entity.Property(e => e.Usetype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwRequestPaymentCancels>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_REQUEST_PAYMENT_CANCELS");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Cancelid).HasColumnName("CANCELID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Paymentid).HasColumnName("PAYMENTID");
-
-                entity.Property(e => e.Refund).HasColumnName("REFUND");
-
-                entity.Property(e => e.RequestDetailid).HasColumnName("REQUEST_DETAILID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Type).HasColumnName("TYPE");
-
-                entity.Property(e => e.Void).HasColumnName("VOID");
             });
 
             modelBuilder.Entity<VwRequestPayments>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_REQUEST_PAYMENTS");
 
-                entity.Property(e => e.Adddate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ADDDATE");
-
-                entity.Property(e => e.Adduser).HasColumnName("ADDUSER");
-
-                entity.Property(e => e.Amount).HasColumnName("AMOUNT");
-
-                entity.Property(e => e.Cardno)
-                    .HasMaxLength(250)
-                    .HasColumnName("CARDNO");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(5)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
-
-                entity.Property(e => e.Description)
-                    .HasMaxLength(200)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Endtime)
-                    .HasColumnType("datetime")
-                    .HasColumnName("ENDTIME");
-
-                entity.Property(e => e.Fullname)
-                    .HasMaxLength(201)
-                    .HasColumnName("FULLNAME");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Instalment).HasColumnName("INSTALMENT");
-
-                entity.Property(e => e.Intid).HasColumnName("INTID");
-
-                entity.Property(e => e.Isdeleted).HasColumnName("ISDELETED");
-
-                entity.Property(e => e.Paytpe).HasColumnName("PAYTPE");
-
-                entity.Property(e => e.Pos)
-                    .HasMaxLength(150)
-                    .HasColumnName("POS");
-
-                entity.Property(e => e.Postauth).HasColumnName("POSTAUTH");
-
-                entity.Property(e => e.Preauth).HasColumnName("PREAUTH");
-
-                entity.Property(e => e.Refund).HasColumnName("REFUND");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Statustext)
-                    .HasMaxLength(500)
-                    .HasColumnName("STATUSTEXT");
-
-                entity.Property(e => e.Storetype)
-                    .HasMaxLength(30)
-                    .HasColumnName("STORETYPE");
-
-                entity.Property(e => e.Substatus).HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Trantype)
-                    .HasMaxLength(15)
-                    .HasColumnName("TRANTYPE");
-
-                entity.Property(e => e.Void).HasColumnName("VOID");
             });
 
             modelBuilder.Entity<VwSales>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_SALES");
 
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.Agentid).HasColumnName("AGENTID");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.CancelationWarranty).HasColumnName("CANCELATION_WARRANTY");
-
-                entity.Property(e => e.CancellationWarrantyRate).HasColumnName("CANCELLATION_WARRANTY_RATE");
-
-                entity.Property(e => e.Chd1).HasColumnName("CHD1");
-
-                entity.Property(e => e.Chd2).HasColumnName("CHD2");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Country)
-                    .HasMaxLength(70)
-                    .HasColumnName("COUNTRY");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Date1)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE1");
-
-                entity.Property(e => e.Date2)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE2");
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.GrandTotal).HasColumnName("GRAND_TOTAL");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Market)
-                    .HasMaxLength(50)
-                    .HasColumnName("MARKET");
-
-                entity.Property(e => e.Nights).HasColumnName("NIGHTS");
-
-                entity.Property(e => e.Pax).HasColumnName("PAX");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Personname)
-                    .HasMaxLength(212)
-                    .HasColumnName("PERSONNAME");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(250)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Producttype)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("PRODUCTTYPE");
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectDetailIntid).HasColumnName("PROJECT_DETAIL_INTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Rdaddate)
-                    .HasColumnType("date")
-                    .HasColumnName("RDADDATE");
-
-                entity.Property(e => e.Reqaddate)
-                    .HasColumnType("date")
-                    .HasColumnName("REQADDATE");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.SellDate)
-                    .HasColumnType("date")
-                    .HasColumnName("SELL_DATE");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATUS");
-
-                entity.Property(e => e.Statuscode).HasColumnName("STATUSCODE");
-
-                entity.Property(e => e.Subproduct)
-                    .HasMaxLength(50)
-                    .HasColumnName("SUBPRODUCT");
-
-                entity.Property(e => e.Substatus)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Producttype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwSalesAll>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_SALES_ALL");
 
-                entity.Property(e => e.Adult).HasColumnName("ADULT");
-
-                entity.Property(e => e.Agentid).HasColumnName("AGENTID");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Boardtype)
-                    .HasMaxLength(25)
-                    .HasColumnName("BOARDTYPE");
-
-                entity.Property(e => e.Chd1).HasColumnName("CHD1");
-
-                entity.Property(e => e.Chd2).HasColumnName("CHD2");
-
-                entity.Property(e => e.Chde).HasColumnName("CHDE");
-
-                entity.Property(e => e.Chdy).HasColumnName("CHDY");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Cost)
-                    .HasColumnType("decimal(38, 2)")
-                    .HasColumnName("COST");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Date1)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE1");
-
-                entity.Property(e => e.Date2)
-                    .HasColumnType("datetime")
-                    .HasColumnName("DATE2");
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.ExtraTotal).HasColumnName("EXTRA_TOTAL");
-
-                entity.Property(e => e.GrandTotal).HasColumnName("GRAND_TOTAL");
-
-                entity.Property(e => e.Id).HasColumnName("ID");
-
-                entity.Property(e => e.Market)
-                    .HasMaxLength(50)
-                    .HasColumnName("MARKET");
-
-                entity.Property(e => e.National)
-                    .HasMaxLength(70)
-                    .HasColumnName("NATIONAL");
-
-                entity.Property(e => e.Personid).HasColumnName("PERSONID");
-
-                entity.Property(e => e.Personname)
-                    .HasMaxLength(212)
-                    .HasColumnName("PERSONNAME");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(250)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Producttype)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("PRODUCTTYPE");
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectDetailIntid).HasColumnName("PROJECT_DETAIL_INTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Requestid).HasColumnName("REQUESTID");
-
-                entity.Property(e => e.Resid)
-                    .HasMaxLength(22)
-                    .HasColumnName("RESID");
-
-                entity.Property(e => e.Resourcecode)
-                    .HasMaxLength(30)
-                    .HasColumnName("RESOURCECODE");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Resourcename)
-                    .HasMaxLength(150)
-                    .HasColumnName("RESOURCENAME");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.Roomtype)
-                    .HasMaxLength(50)
-                    .HasColumnName("ROOMTYPE");
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATUS");
-
-                entity.Property(e => e.Statuscode).HasColumnName("STATUSCODE");
-
-                entity.Property(e => e.Statusid).HasColumnName("STATUSID");
-
-                entity.Property(e => e.Substatus)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Tdate)
-                    .HasColumnType("datetime")
-                    .HasColumnName("TDATE");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
+                entity.Property(e => e.Producttype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwSalesReport>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_SALES_REPORT");
 
-                entity.Property(e => e.Agentid).HasColumnName("AGENTID");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Chd1).HasColumnName("CHD1");
-
-                entity.Property(e => e.Chd2).HasColumnName("CHD2");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Count).HasColumnName("COUNT");
-
-                entity.Property(e => e.Country)
-                    .HasMaxLength(70)
-                    .HasColumnName("COUNTRY");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Day).HasColumnName("DAY");
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.Market)
-                    .HasMaxLength(50)
-                    .HasColumnName("MARKET");
-
-                entity.Property(e => e.Month).HasColumnName("MONTH");
-
-                entity.Property(e => e.Nights).HasColumnName("NIGHTS");
-
-                entity.Property(e => e.Pax).HasColumnName("PAX");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(250)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Producttype)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("PRODUCTTYPE");
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectDetailIntid).HasColumnName("PROJECT_DETAIL_INTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATUS");
-
-                entity.Property(e => e.Statuscode).HasColumnName("STATUSCODE");
-
-                entity.Property(e => e.Subproduct)
-                    .HasMaxLength(50)
-                    .HasColumnName("SUBPRODUCT");
-
-                entity.Property(e => e.Substatus)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
-
-                entity.Property(e => e.WarrantyAmount).HasColumnName("WARRANTY_AMOUNT");
-
-                entity.Property(e => e.Year).HasColumnName("YEAR");
+                entity.Property(e => e.Producttype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwSalesReportAll>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_SALES_REPORT_ALL");
 
-                entity.Property(e => e.Agentid).HasColumnName("AGENTID");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Cost)
-                    .HasColumnType("decimal(38, 2)")
-                    .HasColumnName("COST");
-
-                entity.Property(e => e.Count).HasColumnName("COUNT");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Day).HasColumnName("DAY");
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.Month).HasColumnName("MONTH");
-
-                entity.Property(e => e.Pax).HasColumnName("PAX");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(200)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Producttype)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("PRODUCTTYPE");
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectDetailIntid).HasColumnName("PROJECT_DETAIL_INTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATUS");
-
-                entity.Property(e => e.Statuscode).HasColumnName("STATUSCODE");
-
-                entity.Property(e => e.Substatus)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
-
-                entity.Property(e => e.Year).HasColumnName("YEAR");
+                entity.Property(e => e.Producttype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwSalesReportWithResourcepath>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_SALES_REPORT_WITH_RESOURCEPATH");
 
-                entity.Property(e => e.Agentid).HasColumnName("AGENTID");
-
-                entity.Property(e => e.Baby).HasColumnName("BABY");
-
-                entity.Property(e => e.Chd1).HasColumnName("CHD1");
-
-                entity.Property(e => e.Chd2).HasColumnName("CHD2");
-
-                entity.Property(e => e.Code)
-                    .HasMaxLength(30)
-                    .HasColumnName("CODE");
-
-                entity.Property(e => e.Corpid).HasColumnName("CORPID");
-
-                entity.Property(e => e.Count).HasColumnName("COUNT");
-
-                entity.Property(e => e.Country)
-                    .HasMaxLength(70)
-                    .HasColumnName("COUNTRY");
-
                 entity.Property(e => e.Curcode)
-                    .HasMaxLength(4)
                     .IsUnicode(false)
-                    .HasColumnName("CURCODE")
                     .IsFixedLength();
 
-                entity.Property(e => e.Date)
-                    .HasColumnType("date")
-                    .HasColumnName("DATE");
-
-                entity.Property(e => e.Day).HasColumnName("DAY");
-
-                entity.Property(e => e.DirectBranding)
-                    .HasMaxLength(15)
-                    .HasColumnName("DIRECT_BRANDING");
-
-                entity.Property(e => e.Market)
-                    .HasMaxLength(50)
-                    .HasColumnName("MARKET");
-
-                entity.Property(e => e.Month).HasColumnName("MONTH");
-
-                entity.Property(e => e.Nights).HasColumnName("NIGHTS");
-
-                entity.Property(e => e.Pax).HasColumnName("PAX");
-
-                entity.Property(e => e.Productid).HasColumnName("PRODUCTID");
-
-                entity.Property(e => e.Productname)
-                    .HasMaxLength(250)
-                    .HasColumnName("PRODUCTNAME");
-
-                entity.Property(e => e.Producttype)
-                    .HasMaxLength(10)
-                    .IsUnicode(false)
-                    .HasColumnName("PRODUCTTYPE");
-
-                entity.Property(e => e.ProfitPercent).HasColumnName("PROFIT_PERCENT");
-
-                entity.Property(e => e.ProjectDetailIntid).HasColumnName("PROJECT_DETAIL_INTID");
-
-                entity.Property(e => e.ProjectDetailid).HasColumnName("PROJECT_DETAILID");
-
-                entity.Property(e => e.ProjectGroupid).HasColumnName("PROJECT_GROUPID");
-
-                entity.Property(e => e.ResourcePath)
-                    .HasMaxLength(500)
-                    .HasColumnName("RESOURCE_PATH");
-
-                entity.Property(e => e.Resourceid).HasColumnName("RESOURCEID");
-
-                entity.Property(e => e.Roomcount).HasColumnName("ROOMCOUNT");
-
-                entity.Property(e => e.SellerUserid).HasColumnName("SELLER_USERID");
-
-                entity.Property(e => e.Status)
-                    .HasMaxLength(200)
-                    .HasColumnName("STATUS");
-
-                entity.Property(e => e.Statuscode).HasColumnName("STATUSCODE");
-
-                entity.Property(e => e.Subproduct)
-                    .HasMaxLength(50)
-                    .HasColumnName("SUBPRODUCT");
-
-                entity.Property(e => e.Substatus)
-                    .HasMaxLength(200)
-                    .HasColumnName("SUBSTATUS");
-
-                entity.Property(e => e.Total).HasColumnName("TOTAL");
-
-                entity.Property(e => e.Username)
-                    .HasMaxLength(100)
-                    .HasColumnName("USERNAME");
-
-                entity.Property(e => e.Year).HasColumnName("YEAR");
+                entity.Property(e => e.Producttype).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwStdhotelDiscountTypes>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_STDHOTEL_DISCOUNT_TYPES");
 
-                entity.Property(e => e.Description)
-                    .HasMaxLength(13)
-                    .IsUnicode(false)
-                    .HasColumnName("DESCRIPTION");
-
-                entity.Property(e => e.Typeid).HasColumnName("TYPEID");
+                entity.Property(e => e.Description).IsUnicode(false);
             });
 
             modelBuilder.Entity<VwStdhotelRatecodeDiscountDiscount>(entity =>
             {
-                entity.HasNoKey();
-
                 entity.ToView("VW_STDHOTEL_RATECODE_DISCOUNT_DISCOUNT");
 
-                entity.Property(e => e.Discountid).HasColumnName("DISCOUNTID");
-
-                entity.Property(e => e.Id)
-                    .ValueGeneratedOnAdd()
-                    .HasColumnName("ID");
-
-                entity.Property(e => e.Otherdiscountid).HasColumnName("OTHERDISCOUNTID");
+                entity.Property(e => e.Id).ValueGeneratedOnAdd();
             });
 
             OnModelCreatingPartial(modelBuilder);

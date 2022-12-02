@@ -4,11 +4,9 @@ using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
-[ApiController]
-[Route("[controller]")]
 public sealed class RequestClientController : BaseController<RequestClients, IGenericRepository<RequestClients>>
 {
-    public RequestClientController(ILogger<RequestClients> logger, Models.DBContext context, 
+    public RequestClientController(ILogger<RequestClients> logger, DBContext context, 
         IGenericRepository<RequestClients> repository) : base(logger, context, repository)
     {
         

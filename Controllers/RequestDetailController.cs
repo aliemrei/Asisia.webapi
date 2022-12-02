@@ -4,11 +4,9 @@ using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
-[ApiController]
-[Route("[controller]")]
 public sealed class RequestDetailController : BaseController<RequestDetail, IGenericRepository<RequestDetail>>
 { 
-    public RequestDetailController(ILogger<RequestDetail> logger, Models.DBContext context, 
+    public RequestDetailController(ILogger<RequestDetail> logger, DBContext context, 
         IGenericRepository<RequestDetail> repository) : base(logger, context, repository)
     {
         

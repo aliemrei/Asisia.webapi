@@ -8,16 +8,20 @@ using Microsoft.EntityFrameworkCore;
 using Asisia.webapi.Repositories;
 using Asisia.webapi.Controllers.Interfaces;
 using Asisia.webapi.Models;
+using Asisia.webapi.JWT;
+using Asisia.webapi.Models.Db;
+using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.OData.Extensions;
 
 namespace Asisia.webapi.Controllers;
 
-
+[AuthorizeOData("","")]
 public class BaseController<TEntity, TRepository> :  ODataController, IBaseController<TEntity, TRepository>
-    where TEntity     :   EntityBase
+    where TEntity     :   EntityBase, new()
     where TRepository :   IGenericRepository<TEntity>
 {
     protected readonly ILogger<TEntity>? _logger = null;
-    protected readonly Models.DBContext _context;
+    protected readonly DBContext _context;
     protected readonly IGenericRepository<TEntity> _repository;
 
     public BaseController(ILogger<TEntity>? logger, DBContext context, IGenericRepository<TEntity> repository)
@@ -27,74 +31,93 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
         _repository = repository;
     }
 
-    private bool IsExists(Guid id)
-    {
-        return _repository.GetById(id) != null;
-    }
-
-    [EnableQuery(PageSize=10)]  // requires using Microsoft.AspNet.OData;
+    [EnableQuery(PageSize=1000)]  // requires using Microsoft.AspNet.OData;
     [HttpGet]
-    public virtual async Task<ActionResult<IQueryable<TEntity>>> Get()
+    public virtual ActionResult<IQueryable<TEntity>> Get()
     {
-        return Ok(_repository.GetAll());  
+        var result = _repository.GetAll();
+
+        return Ok(result);  
     }
 
     [EnableQuery]
     [HttpGet("{key}")]
-    public virtual async Task<IActionResult> Get([FromODataUri] Guid key)
+    public virtual SingleResult<TEntity> Get([FromODataUri] Guid key)
     {
-        var entity = _repository.GetById(key);
-        if (entity == null)
-        {
-            return NotFound($"Not found entity with id = {key}");
-        }
-
-        return Ok(entity);
+        var result = _repository.GetById(key); 
+ 
+        return result; 
     }
-     
-
     
     [HttpPatch]
-    public virtual async Task<IActionResult> Patch([FromODataUri] Guid key, Delta<TEntity> data)
+    public virtual IActionResult Patch([FromODataUri] Guid key, Delta<TEntity> data)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-        var entity = _repository.GetById(key);
+
+        var entity = _repository.GetById(key).Queryable.FirstOrDefault();
         if (entity == null)
         {
             return NotFound();
         }
+
         data.Patch(entity);
-        
+
+        _repository.Update(key, entity);
+
         try
         {
-                _context.SaveChanges();
+            _repository.Save();
         }
         catch (DbUpdateConcurrencyException)
+        {  
+            throw;
+        }
+
+        return Ok(entity);
+    }
+
+    [HttpPost]
+    public virtual IActionResult Post([FromBody] TEntity data)
+    {
+        if (!ModelState.IsValid)
         {
-            if (!IsExists(key))
+            return BadRequest(ModelState);
+        }
+
+        if (data != null)
+        {
+            var prop = typeof(TEntity).GetProperty("Id");
+            Guid _id = (Guid)prop.GetValue(data);
+
+            var result = _repository.Update(_id, data);
+
+            if (result == null)
+                _repository.Insert(data);
+    
+            try
             {
-                return NotFound();
+                    _repository.Save();
             }
-            else
+            catch (DbUpdateConcurrencyException)
             {
                 throw;
             }
-        }
-        return Updated(entity);
-    }
 
- 
-    //[ODataRoute("({key})")]
+            return Ok(result ?? data);
+        }
+
+        return BadRequest("Null body!");
+    }
+   
     [HttpPut]
     [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.All)]
-    public virtual async Task<IActionResult> Put([FromODataUri] Guid key, TEntity data)
+    public virtual IActionResult Put([FromODataUri] Guid key, TEntity data)
     {
         var prop = typeof(TEntity).GetProperty("ID");
          
-
         if (!Guid.TryParse(prop.GetValue(data).ToString(), out var _id) || _id != key)
         {
             return BadRequest();
@@ -106,22 +129,9 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
 
         return NoContent();
     }
-
-    [HttpPost]
-    public virtual async Task<ActionResult<TEntity>> Post(TEntity data)
-    {
-        _repository.Insert(data);
-       
-        _repository.Save();
-
-        var prop = typeof(TEntity).GetProperty("ID");
-        var _id = prop.GetValue(data).ToString();
-
-        return CreatedAtAction("Get", new { key = _id }, data);
-    }
-
+    
     [HttpDelete]
-    public virtual async Task<IActionResult> Delete([FromODataUri] Guid key)
+    public virtual IActionResult Delete([FromODataUri] Guid key)
     {
         var entity = _repository.GetById(key);
         if (entity == null)
@@ -134,5 +144,15 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
         _repository.Save();
 
         return Ok();
+    }
+    [HttpGet]
+    [EnableQuery]
+    public virtual IActionResult AddNew()
+    {
+        Request.GetWriterSettings().Validations = Microsoft.OData.ValidationKinds.None;
+
+        var obj = _repository.Create();
+
+        return Ok(obj);
     }
 }

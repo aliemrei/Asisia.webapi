@@ -1,19 +1,21 @@
 
 using Asisia.webapi.JWT;
 using Asisia.webapi.Models;
+using Asisia.webapi.Models.Db;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
 
-[Route("/")]
+[Route("/v2")]
 [ApiController]
 [AllowAnonymous]
 [Route("[controller]")]
 public class TokenController : ControllerBase
  
 {
+    private readonly DBContext Context;
     private string Hash(string input)
     {
         using (SHA1Managed sha1 = new SHA1Managed())
@@ -31,27 +33,30 @@ public class TokenController : ControllerBase
         }
     }
 
+    public TokenController(DBContext context)
+    {
+        Context = context;
+    }
+
     [HttpPost]
     [Route("token")]
     [AllowAnonymous]
     
     public async Task<ActionResult<dynamic>> Authenticate([FromBody] LoginUserModel model)
     {
-        using (DBContext db = new DBContext())
+        var user = Context.Users.IgnoreQueryFilters().FirstOrDefault(x => x.Username == model.Username && x.Corp.Intid == model.CorpId);
+
+        if (user == null || user.Password != Hash(model.Password))
+            return NotFound(new { message = "User or password invalid" });
+
+        var token = TokenService.CreateToken(user);
+
+        user.Password = "";
+        return new
         {
-            var user = db.Users.IgnoreQueryFilters().FirstOrDefault(x => x.Username == model.Username && x.Corp.Intid == model.CorpId);
-
-            if (user == null || user.Password != Hash(model.Password))
-                return NotFound(new { message = "User or password invalid" });
-
-            var token = TokenService.CreateToken(user);
-            user.Password = "";
-            return new
-            {
-                user = new LogedUserModel { username = user.Username, email = user.Email, fullName = user.Fullname, tel = user.Tel1 },
-                access_token = token
-            };
-        }
+            user = new LogedUserModel { username = user.Username, email = user.Email, fullName = user.Fullname, tel = user.Tel1 },
+            access_token = token
+        };
     }
 
     [HttpGet]

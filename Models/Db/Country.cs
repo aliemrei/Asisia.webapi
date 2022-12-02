@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic; // Comment
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace Asisia.webapi.Models.Db
 { // Comment
+    [Table("COUNTRY")]
     public partial class Country : EntityBase // My Handlebars Helper
     {
         public Country()
@@ -12,13 +16,25 @@ namespace Asisia.webapi.Models.Db
             Person = new HashSet<Person>();
         }
 
+        [Key]
+        [Column("ID")]
         public Guid Id { get; set; }
+        [Column("NAME")]
+        [StringLength(70)]
         public string Name { get; set; } = null!;
+        [Column("ISOCODE2")]
+        [StringLength(2)]
+        [Unicode(false)]
         public string? Isocode2 { get; set; }
+        [Column("DIAL_CODE")]
+        [StringLength(15)]
         public string? DialCode { get; set; }
 
+        [InverseProperty("Country")]
         public virtual ICollection<City> City { get; set; }
+        [InverseProperty("Country")]
         public virtual ICollection<LocationAddress> LocationAddress { get; set; }
+        [InverseProperty("NationalityNavigation")]
         public virtual ICollection<Person> Person { get; set; }
 
         // My Handlebars Block Helper: True
