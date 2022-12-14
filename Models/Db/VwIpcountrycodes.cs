@@ -7,16 +7,20 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Keyless]
-    public partial class VwIpcountrycodes : EntityBase // My Handlebars Helper
+    public partial class VwIpcountrycodes : EntityBase 
     {
         [Column("country_code")]
         [StringLength(2)]
+        [RequiredIf]
         public string CountryCode { get; set; } = null!;
+
+
         [Column("country_name")]
         [StringLength(64)]
+        [RequiredIf]
         public string CountryName { get; set; } = null!;
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+
+
+            }
 }

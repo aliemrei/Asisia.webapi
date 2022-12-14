@@ -16,7 +16,7 @@ namespace Asisia.webapi.Models.Db
     [Index(nameof(Isdeleted), Name = "IX_VIRTUAL_POS_DEP_PAYMENTS_6")]
     [Index(nameof(Intid), Name = "IX_VIRTUAL_POS_DEP_PAYMENTS_7")]
     [Index(nameof(Entid), Name = "IX_VIRTUAL_POS_DEP_PAYMENTS_8")]
-    public partial class VirtualPosDepPayments : EntityBase // My Handlebars Helper
+    public partial class VirtualPosDepPayments : EntityBase 
     {
         public VirtualPosDepPayments()
         {
@@ -26,38 +26,83 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("POSACCOUNTID")]
+        [RequiredIf]
         public Guid Posaccountid { get; set; }
+
+
         [Column("AMOUNT")]
+        [RequiredIf]
         public double Amount { get; set; }
+
+
         [Column("STATUS")]
+        [RequiredIf]
         public Guid Status { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("TRANSFERCODE")]
         [StringLength(10)]
+        
         public string? Transfercode { get; set; }
+
+
         [Column("REQUESTID")]
+        
         public Guid? Requestid { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("INTID")]
+        [RequiredIf]
         public int Intid { get; set; }
+
+
         [Column("ENDTIME", TypeName = "datetime")]
+        
         public DateTime? Endtime { get; set; }
+
+
         [Column("BANKTRANSACTIONID")]
         [StringLength(50)]
+        
         public string? Banktransactionid { get; set; }
+
+
         [Column("ENTID")]
         [StringLength(100)]
+        
         public string? Entid { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.VirtualPosDepPaymentsAdduserNavigation))]
@@ -79,7 +124,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Payment")]
         public virtual ICollection<VirtualPosDepPaymentsCancel> VirtualPosDepPaymentsCancel { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

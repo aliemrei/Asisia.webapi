@@ -7,30 +7,60 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CONTACT_FORM")]
-    public partial class ContactForm : EntityBase // My Handlebars Helper
+    public partial class ContactForm : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("PERSONID")]
+        
         public Guid? Personid { get; set; }
+
+
         [Column("TITLE")]
         [StringLength(200)]
+        
         public string? Title { get; set; }
+
+
         [Column("CATEGORY")]
+        
         public Guid? Category { get; set; }
+
+
         [Column("MESSAGETEXT")]
+        
         public string? Messagetext { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.ContactFormAdduserNavigation))]
@@ -48,7 +78,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("ContactForm")]
         public virtual Person? Person { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

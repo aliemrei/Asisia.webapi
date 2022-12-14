@@ -8,493 +8,493 @@ namespace Asisia.webapi.Models.Db
     public partial class DBContext : DbContext
     {
         private readonly IHttpContextAccessor _contextAccessor;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Agency> Agency { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<AgencyGroup> AgencyGroup { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<AuditLogs> AuditLogs { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<BasketData> BasketData { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<BonusDef> BonusDef { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<BonusDefItems> BonusDefItems { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<BonusDefPrices> BonusDefPrices { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<BonusDefUsers> BonusDefUsers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Calendar> Calendar { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CallJobs> CallJobs { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CallList> CallList { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Campaigns> Campaigns { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CashierHandover> CashierHandover { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CashierHandoverEntity> CashierHandoverEntity { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<City> City { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ContactCategory> ContactCategory { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ContactForm> ContactForm { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Corp> Corp { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Country> Country { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CrmCardgroups> CrmCardgroups { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<CrmCardtypes> CrmCardtypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Curcode> Curcode { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Currate> Currate { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Dashboard> Dashboard { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<DashboardItem> DashboardItem { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<DashboardItemYdk> DashboardItemYdk { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<DashboardYdk> DashboardYdk { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<DataDictionary> DataDictionary { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<DbLog> DbLog { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<District> District { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<EntegrationSettings> EntegrationSettings { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<HotelReservationDetails> HotelReservationDetails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<HotelReservations> HotelReservations { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<IntegrationErrors> IntegrationErrors { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<LocationAddress> LocationAddress { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<MailContents> MailContents { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PaymentEmails> PaymentEmails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Payments> Payments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Person> Person { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PersonAddress> PersonAddress { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PersonBonus> PersonBonus { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PersonBonusTypes> PersonBonusTypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PersonCcards> PersonCcards { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PersonGroup> PersonGroup { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Portal> Portal { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalAuthIpaddress> PortalAuthIpaddress { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalCategories> PortalCategories { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalCategoryImages> PortalCategoryImages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalCategoryItems> PortalCategoryItems { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalCurrencies> PortalCurrencies { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalDescription> PortalDescription { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalDomains> PortalDomains { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalEmails> PortalEmails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalLangdictionary> PortalLangdictionary { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalLanguages> PortalLanguages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalSeo> PortalSeo { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalSettings> PortalSettings { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalUrlrewrite> PortalUrlrewrite { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalUser> PortalUser { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PortalUserSocialaccount> PortalUserSocialaccount { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ProjectGroup> ProjectGroup { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ProjectGroupdetail> ProjectGroupdetail { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ProjectGroupdetailBankdep> ProjectGroupdetailBankdep { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ProjectGroupdetailSeo> ProjectGroupdetailSeo { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ProjectGroupdetailVpos> ProjectGroupdetailVpos { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PromotionCodes> PromotionCodes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PromotionCodesMarket> PromotionCodesMarket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PromotionCodesRoomtype> PromotionCodesRoomtype { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PropertyMapping> PropertyMapping { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<PropertyProviders> PropertyProviders { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Reports> Reports { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Request> Request { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestClients> RequestClients { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestDetail> RequestDetail { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestDetailOrgdata> RequestDetailOrgdata { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestNotes> RequestNotes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestPayments> RequestPayments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestStatus> RequestStatus { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RequestYdk> RequestYdk { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ReservationEmails> ReservationEmails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ReservationRules> ReservationRules { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ReservationSettings> ReservationSettings { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ReservationSettingsMarket> ReservationSettingsMarket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ResourceBudget> ResourceBudget { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<ResourceDetail> ResourceDetail { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Resources> Resources { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RoleAuth> RoleAuth { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Roles> Roles { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RolesCustomauth> RolesCustomauth { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<RolesDashboards> RolesDashboards { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SalesReq> SalesReq { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Sil> Sil { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SmsMessage> SmsMessage { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SmsSettings> SmsSettings { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SmtpMails> SmtpMails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SmtpSettings> SmtpSettings { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntAgentStatus> SntAgentStatus { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallDetail> SntCallDetail { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallJobs> SntCallJobs { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallList> SntCallList { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallListOrg> SntCallListOrg { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallStatus> SntCallStatus { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallSummary> SntCallSummary { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallTotals> SntCallTotals { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCallbackIgnores> SntCallbackIgnores { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCalls> SntCalls { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCdr> SntCdr { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntCdrReport> SntCdrReport { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntDbs> SntDbs { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntDiagram> SntDiagram { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntDiagramChildkeys> SntDiagramChildkeys { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntDiagramShapes> SntDiagramShapes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntDialPlan> SntDialPlan { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntLanguageCountries> SntLanguageCountries { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntMissedcalls> SntMissedcalls { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntMissedcallsAll> SntMissedcallsAll { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntQueueAbandon> SntQueueAbandon { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntQueueLog> SntQueueLog { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntQueueMembers> SntQueueMembers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntQueues> SntQueues { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntReport> SntReport { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntRtSippeers> SntRtSippeers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntSippeers> SntSippeers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SntSwitchboard> SntSwitchboard { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdParams> StdParams { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdboardtypes> Stdboardtypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdhotel> Stdhotel { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelAnnouncement> StdhotelAnnouncement { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelBoardtypes> StdhotelBoardtypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelDescriptions> StdhotelDescriptions { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelExtras> StdhotelExtras { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelFecilities> StdhotelFecilities { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelImages> StdhotelImages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelMarket> StdhotelMarket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelMarketCountry> StdhotelMarketCountry { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelPricecondition> StdhotelPricecondition { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelPriceconditionCalendar> StdhotelPriceconditionCalendar { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelPriceconditionOccupancy> StdhotelPriceconditionOccupancy { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecode> StdhotelRatecode { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDetail> StdhotelRatecodeDetail { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDetailAgencygroups> StdhotelRatecodeDetailAgencygroups { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDetailOccupancy> StdhotelRatecodeDetailOccupancy { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscount> StdhotelRatecodeDiscount { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscountContract> StdhotelRatecodeDiscountContract { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscountDiscount> StdhotelRatecodeDiscountDiscount { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscountMarket> StdhotelRatecodeDiscountMarket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscountRatetype> StdhotelRatecodeDiscountRatetype { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeDiscountRoomtype> StdhotelRatecodeDiscountRoomtype { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeMarkup> StdhotelRatecodeMarkup { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeMarkupMarkets> StdhotelRatecodeMarkupMarkets { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatecodeMarkupRoomtype> StdhotelRatecodeMarkupRoomtype { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatetype> StdhotelRatetype { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRatetypesAvailability> StdhotelRatetypesAvailability { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRoomtypes> StdhotelRoomtypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelRoomtypesAvailability> StdhotelRoomtypesAvailability { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelSeasons> StdhotelSeasons { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdhotelStopsale> StdhotelStopsale { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdhoteldiscount> Stdhoteldiscount { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdlanguages> Stdlanguages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdmarketCountries> StdmarketCountries { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdmarkets> Stdmarkets { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdroomtypes> Stdroomtypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdstore> Stdstore { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemGroupItems> StdstoreItemGroupItems { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemGroups> StdstoreItemGroups { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemImages> StdstoreItemImages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemIngredients> StdstoreItemIngredients { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemPrices> StdstoreItemPrices { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemPricesIngredients> StdstoreItemPricesIngredients { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemSizes> StdstoreItemSizes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItems> StdstoreItems { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<StdstoreItemsGroups> StdstoreItemsGroups { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Stdvehicletypes> Stdvehicletypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Survey> Survey { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SurveyAnsweroptions> SurveyAnsweroptions { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SurveyAnswers> SurveyAnswers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Surveys> Surveys { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<SwicthboardLog> SwicthboardLog { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Ticket> Ticket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TicketActivations> TicketActivations { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TicketGifts> TicketGifts { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TicketHours> TicketHours { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TicketMarket> TicketMarket { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TicketPrices> TicketPrices { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TileItemoption> TileItemoption { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Tour> Tour { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TourDiscounts> TourDiscounts { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TourImages> TourImages { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TourPrices> TourPrices { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TourProgram> TourProgram { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Tourdiscount> Tourdiscount { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TransferLocations> TransferLocations { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TransferPrices> TransferPrices { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<TransferProviders> TransferProviders { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Turnike> Turnike { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UserHistory> UserHistory { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UserProjectDetails> UserProjectDetails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UserProjects> UserProjects { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UserRoleRequestStatus> UserRoleRequestStatus { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UserRoles> UserRoles { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Users> Users { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<UsersCustomauth> UsersCustomauth { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<Vehicletypes> Vehicletypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPos> VirtualPos { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosAccountInstalments> VirtualPosAccountInstalments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosAccounts> VirtualPosAccounts { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosAccountsCurcodes> VirtualPosAccountsCurcodes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosBinnumbers> VirtualPosBinnumbers { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosDefaults> VirtualPosDefaults { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosDepAccounts> VirtualPosDepAccounts { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosDepPayments> VirtualPosDepPayments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosDepPaymentsCancel> VirtualPosDepPaymentsCancel { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentEmails> VirtualPosPaymentEmails { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentMessageTemps> VirtualPosPaymentMessageTemps { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentRequests> VirtualPosPaymentRequests { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentRequestsNotes> VirtualPosPaymentRequestsNotes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentTemps> VirtualPosPaymentTemps { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentVposes> VirtualPosPaymentVposes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPayments> VirtualPosPayments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosPaymentsCancel> VirtualPosPaymentsCancel { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosSwap> VirtualPosSwap { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VirtualPosbinnames> VirtualPosbinnames { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwBasketInfo> VwBasketInfo { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwBasketPayments> VwBasketPayments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwCallJobs> VwCallJobs { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwCalljobReasons> VwCalljobReasons { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwCampaigns> VwCampaigns { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwHotelMarketCountry> VwHotelMarketCountry { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwIpcountrycodes> VwIpcountrycodes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwIplocations> VwIplocations { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwLocations> VwLocations { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwMobPaymentReport> VwMobPaymentReport { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwProducts> VwProducts { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwProjectGroup> VwProjectGroup { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwPromotionCodes> VwPromotionCodes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwRequestPaymentCancels> VwRequestPaymentCancels { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwRequestPayments> VwRequestPayments { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwSales> VwSales { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwSalesAll> VwSalesAll { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwSalesReport> VwSalesReport { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwSalesReportAll> VwSalesReportAll { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwSalesReportWithResourcepath> VwSalesReportWithResourcepath { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwStdhotelDiscountTypes> VwStdhotelDiscountTypes { get; set; } = null!;
-        // My Handlebars Helper
+        //System.Collections.Generic.Dictionary`2[System.String,System.Object]
         public virtual DbSet<VwStdhotelRatecodeDiscountDiscount> VwStdhotelRatecodeDiscountDiscount { get; set; } = null!;
 
         public DBContext()  
@@ -505,7 +505,6 @@ namespace Asisia.webapi.Models.Db
             IHttpContextAccessor contextAccessor) : base(options)
         {
             _contextAccessor = contextAccessor;
-            
             if (Guid.TryParse(contextAccessor.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "corpId")?.Value, out var corpId))
             {
                 _tenant = corpId;  

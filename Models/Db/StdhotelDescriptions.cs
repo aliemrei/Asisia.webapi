@@ -8,29 +8,45 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDHOTEL_DESCRIPTIONS")]
     [Index(nameof(Uid), Name = "IX_STDHOTEL_DESCRIPTIONS", IsUnique = true)]
-    public partial class StdhotelDescriptions : EntityBase // My Handlebars Helper
+    public partial class StdhotelDescriptions : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public int Id { get; set; }
+
+
         [Column("HOTELID")]
+        
         public Guid? Hotelid { get; set; }
+
+
         [Column("DESCRIPTION")]
+        
         public string? Description { get; set; }
+
+
         [Column("CATEGORY")]
         [StringLength(150)]
+        
         public string? Category { get; set; }
+
+
         [Column("SEASON")]
         [StringLength(10)]
+        
         public string? Season { get; set; }
+
+
         [Column("UID")]
+        [RequiredIf]
         public Guid Uid { get; set; }
+
+
 
         [ForeignKey(nameof(Hotelid))]
         [InverseProperty(nameof(Stdhotel.StdhotelDescriptions))]
         public virtual Stdhotel? Hotel { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

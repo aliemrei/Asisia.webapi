@@ -18,7 +18,6 @@ namespace Asisia.webapi.Repositories
 
             _dbSet = _context.Set<TEntity>();
         }
-         
         [EnableQuery(PageSize = 15)]
         public virtual IQueryable<TEntity> GetAll()
         {
@@ -29,18 +28,19 @@ namespace Asisia.webapi.Repositories
         {
             return SingleResult.Create(_dbSet.Where<TEntity>(b => EF.Property<Guid>(b, "Id") == id));
         }
-
-        public virtual void Insert(TEntity obj)
+        public virtual TEntity? Insert(TEntity obj)
         {
             _dbSet.Add(obj);
+
+            return obj;
         }
-        public virtual TEntity? Update(object id, TEntity obj)
+        public virtual TEntity? Update(object id, TEntity changedData)
         {
             var currentData = _dbSet.Find(id);
 
             if (currentData != null)
             {
-                var dbEntityEntry = _context.Entry(obj);
+                var dbEntityEntry = _context.Entry(changedData);
                 
                 dbEntityEntry.OriginalValues.SetValues(currentData);
         
@@ -72,6 +72,10 @@ namespace Asisia.webapi.Repositories
             {
                 _context.SaveChanges();
             }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+            {
+                throw new Exception((ex.InnerException?.Message ?? ex.Message), ex); 
+            }
             catch (System.Exception)
             {
                 
@@ -79,10 +83,14 @@ namespace Asisia.webapi.Repositories
             }
             
         }
-
         public TEntity Create() 
         {
             return _context.CreateEntity<TEntity>();
+        }
+
+        public virtual bool IsExists(Guid id)
+        {
+            return _dbSet.Any<TEntity>(b => EF.Property<Guid>(b, "Id") == id);
         }
     }
 }

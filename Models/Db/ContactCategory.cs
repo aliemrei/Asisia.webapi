@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CONTACT_CATEGORY")]
-    public partial class ContactCategory : EntityBase // My Handlebars Helper
+    public partial class ContactCategory : EntityBase 
     {
         public ContactCategory()
         {
@@ -16,12 +16,21 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("DEFINITION")]
         [StringLength(150)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
 
         [ForeignKey(nameof(Corpid))]
         [InverseProperty("ContactCategory")]
@@ -29,7 +38,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("CategoryNavigation")]
         public virtual ICollection<ContactForm> ContactForm { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

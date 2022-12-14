@@ -7,47 +7,104 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("VIRTUAL_POS_DEFAULTS")]
-    public partial class VirtualPosDefaults : EntityBase // My Handlebars Helper
+    public partial class VirtualPosDefaults : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("PORTALUID")]
+        [RequiredIf]
         public Guid Portaluid { get; set; }
+
+
         [Column("VISA_POSID")]
+        
         public Guid? VisaPosid { get; set; }
+
+
         [Column("MASTER_POSID")]
+        
         public Guid? MasterPosid { get; set; }
+
+
         [Column("AMEX_POSID")]
+        
         public Guid? AmexPosid { get; set; }
+
+
         [Column("JCB_POSID")]
+        
         public Guid? JcbPosid { get; set; }
+
+
         [Column("UNIONPAY_POSID")]
+        
         public Guid? UnionpayPosid { get; set; }
+
+
         [Column("MAESTRO_POSID")]
+        
         public Guid? MaestroPosid { get; set; }
+
+
         [Column("VISA_EX_POSID")]
+        
         public Guid? VisaExPosid { get; set; }
+
+
         [Column("MASTER_EX_POSID")]
+        
         public Guid? MasterExPosid { get; set; }
+
+
         [Column("AMEX_EX_POSID")]
+        
         public Guid? AmexExPosid { get; set; }
+
+
         [Column("JCB_EX_POSID")]
+        
         public Guid? JcbExPosid { get; set; }
+
+
         [Column("UNIONPAY_EX_POSID")]
+        
         public Guid? UnionpayExPosid { get; set; }
+
+
         [Column("MAESTRO_EX_POSID")]
+        
         public Guid? MaestroExPosid { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.VirtualPosDefaultsAdduserNavigation))]
@@ -96,7 +153,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(VirtualPos.VirtualPosDefaultsVisaPos))]
         public virtual VirtualPos? VisaPos { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

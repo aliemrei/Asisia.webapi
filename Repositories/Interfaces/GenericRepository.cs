@@ -7,10 +7,11 @@ namespace Asisia.webapi.Repositories
     {
         IQueryable<TEntity> GetAll();
         SingleResult<TEntity> GetById(Guid id);
-        void Insert(TEntity obj);
-        TEntity? Update(object id, TEntity obj);
+        TEntity? Insert(TEntity obj);
+        TEntity? Update(object id, TEntity changedData);
         void Delete(object id);
         void Save();
         TEntity Create();
+        bool IsExists(Guid id);
     }
 }

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("DISTRICT")]
-    public partial class District : EntityBase // My Handlebars Helper
+    public partial class District : EntityBase 
     {
         public District()
         {
@@ -16,12 +16,21 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CITYID")]
+        [RequiredIf]
         public Guid Cityid { get; set; }
+
+
         [Column("NAME")]
         [StringLength(70)]
+        
         public string? Name { get; set; }
+
+
 
         [ForeignKey(nameof(Cityid))]
         [InverseProperty("District")]
@@ -29,7 +38,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("District")]
         public virtual ICollection<LocationAddress> LocationAddress { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

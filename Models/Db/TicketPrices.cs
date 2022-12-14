@@ -9,7 +9,7 @@ namespace Asisia.webapi.Models.Db
     [Table("TICKET_PRICES")]
     [Index(nameof(Pricesort), Name = "IX_TICKET_PRICES")]
     [Index(nameof(Sellfrom), nameof(Sellto), nameof(Ticketdatefrom), nameof(Ticketdateto), nameof(Checkindays), nameof(Maxvalidcapacity), Name = "IX_TICKET_PRICES_1")]
-    public partial class TicketPrices : EntityBase // My Handlebars Helper
+    public partial class TicketPrices : EntityBase 
     {
         public TicketPrices()
         {
@@ -18,51 +18,114 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public int Id { get; set; }
+
+
         [Column("TICKETID")]
+        [RequiredIf]
         public Guid Ticketid { get; set; }
+
+
         [Column("PRICETYPE")]
+        [RequiredIf]
         public short Pricetype { get; set; }
+
+
         [Column("SELLFROM", TypeName = "datetime")]
+        
         public DateTime? Sellfrom { get; set; }
+
+
         [Column("SELLTO", TypeName = "datetime")]
+        
         public DateTime? Sellto { get; set; }
+
+
         [Column("TICKETDATEFROM", TypeName = "datetime")]
+        
         public DateTime? Ticketdatefrom { get; set; }
+
+
         [Column("TICKETDATETO", TypeName = "datetime")]
+        
         public DateTime? Ticketdateto { get; set; }
+
+
         [Column("CHECKINDAYS")]
         [StringLength(7)]
         [Unicode(false)]
+        
         public string? Checkindays { get; set; }
+
+
         [Column("MAXVALIDCAPACITY")]
+        
         public int? Maxvalidcapacity { get; set; }
+
+
         [Column("PRICESORT")]
+        
         public int? Pricesort { get; set; }
+
+
         [Column("ADULTPRICE", TypeName = "decimal(19, 2)")]
+        
         public decimal? Adultprice { get; set; }
+
+
         [Column("CHILDPRICE", TypeName = "decimal(19, 2)")]
+        
         public decimal? Childprice { get; set; }
+
+
         [Column("CURCODE")]
         [StringLength(5)]
         [Unicode(false)]
+        
         public string? Curcode { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("AGENCYID")]
+        
         public Guid? Agencyid { get; set; }
+
+
         [Column("MARKETID")]
+        
         public Guid? Marketid { get; set; }
+
+
         [Column("PRICEKIND")]
+        [RequiredIf]
         public short Pricekind { get; set; }
+
+
         [Column("UNITPRICE")]
+        
         public double? Unitprice { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.TicketPricesAdduserNavigation))]
@@ -85,7 +148,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("TicketPrice")]
         public virtual ICollection<RequestDetail> RequestDetail { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

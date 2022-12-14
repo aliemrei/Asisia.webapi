@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDROOMTYPES")]
-    public partial class Stdroomtypes : EntityBase // My Handlebars Helper
+    public partial class Stdroomtypes : EntityBase 
     {
         public Stdroomtypes()
         {
@@ -17,15 +17,19 @@ namespace Asisia.webapi.Models.Db
         [Key]
         [Column("ROOMTYPE")]
         [StringLength(6)]
+        [RequiredIf]
         public string Roomtype { get; set; } = null!;
+
+
         [Column("ENT_ROOMTYPE")]
         [StringLength(50)]
+        
         public string? EntRoomtype { get; set; }
+
+
 
         [InverseProperty("RoomtypeNavigation")]
         public virtual ICollection<StdhotelRoomtypes> StdhotelRoomtypes { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -10,24 +10,45 @@ namespace Asisia.webapi.Models.Db
     [Index(nameof(Hotelid), nameof(Boardtypeid), nameof(Providerid), Name = "IX_PROPERTY_MAPPING")]
     [Index(nameof(Hotelid), nameof(Roomid), nameof(Providerid), Name = "IX_PROPERTY_MAPPING_1")]
     [Index(nameof(Hotelid), nameof(Providerid), nameof(Ratetypeid), Name = "IX_PROPERTY_MAPPING_2")]
-    public partial class PropertyMapping : EntityBase // My Handlebars Helper
+    public partial class PropertyMapping : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public int Id { get; set; }
+
+
         [Column("PROVIDERID")]
+        [RequiredIf]
         public Guid Providerid { get; set; }
+
+
         [Column("HOTELID")]
+        [RequiredIf]
         public Guid Hotelid { get; set; }
+
+
         [Column("ROOMID")]
+        
         public Guid? Roomid { get; set; }
+
+
         [Column("BOARDTYPEID")]
+        
         public Guid? Boardtypeid { get; set; }
+
+
         [Column("RATETYPEID")]
+        
         public Guid? Ratetypeid { get; set; }
+
+
         [Column("CODE")]
         [StringLength(150)]
+        
         public string? Code { get; set; }
+
+
 
         [ForeignKey(nameof(Boardtypeid))]
         [InverseProperty(nameof(StdhotelBoardtypes.PropertyMapping))]
@@ -45,7 +66,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(StdhotelRoomtypes.PropertyMapping))]
         public virtual StdhotelRoomtypes? Room { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("PAYMENTS")]
-    public partial class Payments : EntityBase // My Handlebars Helper
+    public partial class Payments : EntityBase 
     {
         public Payments()
         {
@@ -16,47 +16,104 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("REQUESTID")]
+        
         public Guid? Requestid { get; set; }
+
+
         [Column("RESOURCEID")]
+        
         public Guid? Resourceid { get; set; }
+
+
         [Column("DESCRIPTION")]
         [StringLength(250)]
+        
         public string? Description { get; set; }
+
+
         [Column("ISCASH")]
+        [RequiredIf]
         public bool Iscash { get; set; }
+
+
         [Column("ISCCARD")]
+        [RequiredIf]
         public bool Isccard { get; set; }
+
+
         [Column("HARDPOSIDENTITY")]
         [StringLength(50)]
+        
         public string? Hardposidentity { get; set; }
+
+
         [Column("DEBT")]
+        [RequiredIf]
         public double Debt { get; set; }
+
+
         [Column("CREDIT")]
+        [RequiredIf]
         public double Credit { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("STATUS")]
+        [RequiredIf]
         public Guid Status { get; set; }
+
+
         [Column("CURCODE")]
         [StringLength(5)]
         [Unicode(false)]
+        [RequiredIf]
         public string Curcode { get; set; } = null!;
+
+
         [Column("PAYTYPE")]
+        [RequiredIf]
         public byte Paytype { get; set; }
+
+
         [Column("ISBONUS")]
+        [RequiredIf]
         public bool Isbonus { get; set; }
+
+
         [Column("TL_AMOUNT")]
+        
         public double? TlAmount { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.PaymentsAdduserNavigation))]
@@ -82,7 +139,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Payment")]
         public virtual ICollection<RequestPayments> RequestPayments { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

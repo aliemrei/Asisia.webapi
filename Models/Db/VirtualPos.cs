@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("VIRTUAL_POS")]
-    public partial class VirtualPos : EntityBase // My Handlebars Helper
+    public partial class VirtualPos : EntityBase 
     {
         public VirtualPos()
         {
@@ -28,44 +28,86 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("DESCRIPTION")]
         [StringLength(150)]
+        [RequiredIf]
         public string Description { get; set; } = null!;
+
+
         [Column("NAME")]
         [StringLength(150)]
+        
         public string? Name { get; set; }
+
+
         [Column("CLASS")]
         [StringLength(150)]
+        [RequiredIf]
         public string Class { get; set; } = null!;
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("BINNUMBER_NAME")]
         [StringLength(50)]
+        
         public string? BinnumberName { get; set; }
+
+
         [Column("ACC_INV_CODE")]
         [StringLength(30)]
+        
         public string? AccInvCode { get; set; }
+
+
         [Column("ACC_PAY_CODE")]
         [StringLength(30)]
+        
         public string? AccPayCode { get; set; }
+
+
         [Column("INTID")]
+        [RequiredIf]
         public int Intid { get; set; }
+
+
         [Column("ICONURL")]
         [StringLength(250)]
+        
         public string? Iconurl { get; set; }
+
+
         [Column("FONTCOLOR")]
         [StringLength(20)]
+        
         public string? Fontcolor { get; set; }
+
+
         [Column("FORECOLOR")]
         [StringLength(20)]
+        
         public string? Forecolor { get; set; }
+
+
         [Column("XMLUSERNAME")]
         [StringLength(150)]
+        
         public string? Xmlusername { get; set; }
+
+
         [Column("XMLPASSWORD")]
         [StringLength(150)]
+        
         public string? Xmlpassword { get; set; }
+
+
 
         [ForeignKey(nameof(Corpid))]
         [InverseProperty("VirtualPos")]
@@ -97,7 +139,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(VirtualPosDefaults.VisaPos))]
         public virtual ICollection<VirtualPosDefaults> VirtualPosDefaultsVisaPos { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -7,17 +7,29 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("ROLES_DASHBOARDS")]
-    public partial class RolesDashboards : EntityBase // My Handlebars Helper
+    public partial class RolesDashboards : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("ROLEID")]
+        [RequiredIf]
         public Guid Roleid { get; set; }
+
+
         [Column("DASHBOARDID")]
+        [RequiredIf]
         public Guid Dashboardid { get; set; }
+
+
         [Column("ALLOW")]
+        
         public bool? Allow { get; set; }
+
+
 
         [ForeignKey(nameof(Dashboardid))]
         [InverseProperty("RolesDashboards")]
@@ -26,7 +38,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(Roles.RolesDashboards))]
         public virtual Roles Role { get; set; } = null!;
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

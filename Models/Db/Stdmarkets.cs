@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDMARKETS")]
     [Index(nameof(Corpid), nameof(Definition), Name = "UQ__STDMARKE__D0FAF608463C925A", IsUnique = true)]
-    public partial class Stdmarkets : EntityBase // My Handlebars Helper
+    public partial class Stdmarkets : EntityBase 
     {
         public Stdmarkets()
         {
@@ -22,20 +22,38 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("DEFINITION")]
         [StringLength(50)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
         [Column("CURCODE")]
         [StringLength(4)]
+        
         public string? Curcode { get; set; }
+
+
         [Column("LANGUAGE")]
         [StringLength(5)]
+        
         public string? Language { get; set; }
+
+
         [Column("FORCE_BASKETTOCURCODE")]
+        [RequiredIf]
         public bool ForceBaskettocurcode { get; set; }
+
+
 
         [ForeignKey(nameof(Corpid))]
         [InverseProperty("Stdmarkets")]
@@ -53,7 +71,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Market")]
         public virtual ICollection<TransferPrices> TransferPrices { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

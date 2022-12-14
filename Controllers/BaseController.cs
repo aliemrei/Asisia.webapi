@@ -12,10 +12,16 @@ using Asisia.webapi.JWT;
 using Asisia.webapi.Models.Db;
 using Newtonsoft.Json.Linq;
 using Microsoft.AspNetCore.OData.Extensions;
+using Microsoft.OData;
+using Newtonsoft.Json;
+using System.Net;
+using Microsoft.AspNetCore.JsonPatch;
+using System.Dynamic;
 
 namespace Asisia.webapi.Controllers;
 
 [AuthorizeOData("","")]
+//[ActionExecutingContextChecker()]
 public class BaseController<TEntity, TRepository> :  ODataController, IBaseController<TEntity, TRepository>
     where TEntity     :   EntityBase, new()
     where TRepository :   IGenericRepository<TEntity>
@@ -31,6 +37,30 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
         _repository = repository;
     }
 
+    protected ActionResult ValidationFailed()
+    {
+        var err = new ODataError 
+                {
+                    Message = "Validation error",
+                    Details = ModelState.ToDictionary(
+                        kvp => kvp.Key, //.ToCamelCase(),
+                        kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                    ).Select(e => new ODataErrorDetail() {
+                        //ErrorCode = e.Key,
+                        Target = e.Key,
+                        Message = string.Join("\n", e.Value.ToArray())
+                    }).ToList()
+                };
+
+        Response.Clear();
+
+        Response.StatusCode = StatusCodes.Status400BadRequest;// (int)HttpStatusCode.InternalServerError;
+
+        Response.ContentType = "application/json";
+
+        return new ContentResult { Content = JsonConvert.SerializeObject(err) };
+    } 
+
     [EnableQuery(PageSize=1000)]  // requires using Microsoft.AspNet.OData;
     [HttpGet]
     public virtual ActionResult<IQueryable<TEntity>> Get()
@@ -44,62 +74,97 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
     [HttpGet("{key}")]
     public virtual SingleResult<TEntity> Get([FromODataUri] Guid key)
     {
-        var result = _repository.GetById(key); 
- 
-        return result; 
+
+        if (key == Guid.Empty)
+        {
+            IQueryable<TEntity> result = AddNew();
+
+            return SingleResult.Create(result);
+        }
+
+        return _repository.GetById((Guid)key); 
     }
     
     [HttpPatch]
-    public virtual IActionResult Patch([FromODataUri] Guid key, Delta<TEntity> data)
+    
+    public virtual IActionResult Patch(ODataQueryOptions<TEntity> options, 
+        [FromODataUri] Guid key, [FromBody] System.Text.Json.JsonElement data)
     {
-        if (!ModelState.IsValid)
+        var delta = new Delta<TEntity>( typeof(TEntity));
+
+        var changedData = data.ToObject<TEntity>();
+
+        foreach (var prop in changedData.GetType().GetProperties())
         {
-            return BadRequest(ModelState);
+            if (data.TryGetProperty(prop.Name, out var value)) {
+                delta.TrySetPropertyValue(prop.Name, prop.GetValue(changedData));
+            }
         }
-
-        var entity = _repository.GetById(key).Queryable.FirstOrDefault();
-        if (entity == null)
+        
+        if (key == Guid.Empty)
         {
-            return NotFound();
+            var result = AddNew().FirstOrDefault();
+
+            delta.Patch(result);
+
+            return Ok(result);
         }
-
-        data.Patch(entity);
-
-        _repository.Update(key, entity);
-
-        try
+        else 
         {
-            _repository.Save();
-        }
-        catch (DbUpdateConcurrencyException)
-        {  
-            throw;
-        }
+            var currentData = _repository.GetById(key).Queryable.FirstOrDefault();
 
-        return Ok(entity);
+           
+            /*
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            */
+            if (currentData == null)
+            {
+                return NotFound();
+            }
+
+            delta.Patch(currentData);
+
+            _repository.Update(key, currentData);
+
+            try
+            {
+                _repository.Save();
+            }
+            catch (DbUpdateConcurrencyException)
+            {  
+                throw;
+            }
+
+            return Ok(currentData);
+        }
     }
 
     [HttpPost]
-    public virtual IActionResult Post([FromBody] TEntity data)
+    public virtual IActionResult Post([FromBody] TEntity? data)
     {
         if (!ModelState.IsValid)
         {
-            return BadRequest(ModelState);
+            return ValidationFailed();
         }
 
         if (data != null)
         {
+            TEntity result = null; 
+
             var prop = typeof(TEntity).GetProperty("Id");
             Guid _id = (Guid)prop.GetValue(data);
 
-            var result = _repository.Update(_id, data);
+            var IsExists = _repository.IsExists(_id);
 
-            if (result == null)
-                _repository.Insert(data);
+            if (IsExists == false)
+                result = _repository.Insert(data);
     
             try
             {
-                    _repository.Save();
+                _repository.Save();
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -147,12 +212,16 @@ public class BaseController<TEntity, TRepository> :  ODataController, IBaseContr
     }
     [HttpGet]
     [EnableQuery]
-    public virtual IActionResult AddNew()
+    protected virtual IQueryable<TEntity> AddNew()
     {
+        List<TEntity> result = new List<TEntity>();
+
         Request.GetWriterSettings().Validations = Microsoft.OData.ValidationKinds.None;
 
         var obj = _repository.Create();
 
-        return Ok(obj);
+        result.Add(obj);
+
+        return result.AsQueryable();  
     }
 }

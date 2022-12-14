@@ -8,7 +8,10 @@
 {{#each property-annotations}}
         {{{property-annotation}}}
 {{/each}}
+        {{#ifRequired property-type '' ''}}{{/ifRequired}}
         public {{property-type}} {{property-name}} { get; set; }{{#if nullable-reference-types }}{{#unless property-isnullable}} = null!;{{/unless}}{{/if}}
+
+
 {{/each}}
 {{#if nav-properties}}
 
@@ -24,5 +27,4 @@
 {{/each}}
 {{/if}}
 
-        // My Handlebars Block Helper: {{#ifCond '1' '==' '1'}}True{{else}}False{{/ifCond}}
-        // My Handlebars Block Helper: {{#ifCond '2' '==' '1'}}True{{else}}False{{/ifCond}}
+        

@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("TICKET_GIFTS")]
     [Index(nameof(Corpid), nameof(Definition), Name = "UQ__TICKET_G__D0FAF60846C03765", IsUnique = true)]
-    public partial class TicketGifts : EntityBase // My Handlebars Helper
+    public partial class TicketGifts : EntityBase 
     {
         public TicketGifts()
         {
@@ -18,23 +18,44 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("DEFINITION")]
         [StringLength(100)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
         [Column("PRICE")]
+        
         public double? Price { get; set; }
+
+
         [Column("CURCODE")]
         [StringLength(5)]
         [Unicode(false)]
+        [RequiredIf]
         public string Curcode { get; set; } = null!;
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("PLU")]
         [StringLength(10)]
+        
         public string? Plu { get; set; }
+
+
 
         [ForeignKey(nameof(Corpid))]
         [InverseProperty("TicketGifts")]
@@ -47,7 +68,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Gift")]
         public virtual ICollection<TileItemoption> TileItemoption { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("RESOURCES")]
     [Index(nameof(Code), nameof(Corpid), Name = "IX_RESOURCES", IsUnique = true)]
-    public partial class Resources : EntityBase // My Handlebars Helper
+    public partial class Resources : EntityBase 
     {
         public Resources()
         {
@@ -20,41 +20,86 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CODE")]
         [StringLength(30)]
+        [RequiredIf]
         public string Code { get; set; } = null!;
+
+
         [Column("DESCRIPTION")]
         [StringLength(150)]
+        [RequiredIf]
         public string Description { get; set; } = null!;
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("MASTERID")]
+        
         public Guid? Masterid { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("COST_BUDGET")]
+        [RequiredIf]
         public bool CostBudget { get; set; }
+
+
         [Column("DEFAULT_DIRECT_BRANDING")]
         [StringLength(15)]
+        
         public string? DefaultDirectBranding { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("RAKAM_DESC")]
         [StringLength(50)]
+        
         public string? RakamDesc { get; set; }
+
+
         [Column("ICON")]
         [StringLength(35)]
+        
         public string? Icon { get; set; }
+
+
         [Column("RESOURCESPATH")]
         [StringLength(500)]
+        
         public string? Resourcespath { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.ResourcesAdduserNavigation))]
@@ -74,7 +119,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Resource")]
         public virtual ICollection<RequestDetail> RequestDetail { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

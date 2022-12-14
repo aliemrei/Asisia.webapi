@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CURCODE")]
-    public partial class Curcode : EntityBase // My Handlebars Helper
+    public partial class Curcode : EntityBase 
     {
         public Curcode()
         {
@@ -32,9 +32,15 @@ namespace Asisia.webapi.Models.Db
         [Column("CODE")]
         [StringLength(5)]
         [Unicode(false)]
+        [RequiredIf]
         public string Code { get; set; } = null!;
+
+
         [Column("LOGO_ENTID")]
+        
         public int? LogoEntid { get; set; }
+
+
 
         [InverseProperty("DefaultCurcodeNavigation")]
         public virtual ICollection<Agency> Agency { get; set; }
@@ -67,7 +73,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("CurcodeNavigation")]
         public virtual ICollection<VirtualPosPayments> VirtualPosPayments { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -21,7 +21,7 @@ namespace Asisia.webapi.Models.Db
     [Index(nameof(Tel1), Name = "IX_PERSON_7")]
     [Index(nameof(Tel2), Name = "IX_PERSON_8")]
     [Index(nameof(Type), Name = "IX_PERSON_9")]
-    public partial class Person : EntityBase // My Handlebars Helper
+    public partial class Person : EntityBase 
     {
         public Person()
         {
@@ -39,83 +39,185 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("FIRSTNAME")]
         [StringLength(70)]
+        
         public string? Firstname { get; set; }
+
+
         [Column("SECONDNAME")]
         [StringLength(70)]
+        
         public string? Secondname { get; set; }
+
+
         [Column("LASTNAME")]
         [StringLength(70)]
+        
         public string? Lastname { get; set; }
+
+
         [Column("FULLNAME")]
         [StringLength(212)]
+        [RequiredIf]
         public string Fullname { get; set; } = null!;
+
+
         [Column("DEFAULTNAME")]
+        [RequiredIf]
         public short Defaultname { get; set; }
+
+
         [Column("GENDER")]
+        
         public short? Gender { get; set; }
+
+
         [Column("NATIONALITY")]
+        
         public Guid? Nationality { get; set; }
+
+
         [Column("IDENTITYNO")]
         [StringLength(15)]
+        
         public string? Identityno { get; set; }
+
+
         [Column("BIRTHDATE", TypeName = "date")]
+        
         public DateTime? Birthdate { get; set; }
+
+
         [Column("TEL1")]
+        
         public long? Tel1 { get; set; }
+
+
         [Column("TEL2")]
+        
         public long? Tel2 { get; set; }
+
+
         [Column("EMAIL")]
         [StringLength(200)]
+        
         public string? Email { get; set; }
+
+
         [Column("TYPE")]
+        [RequiredIf]
         public short Type { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("GROUPID")]
+        
         public Guid? Groupid { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("RAKAM_ID")]
         [StringLength(15)]
+        
         public string? RakamId { get; set; }
+
+
         [Column("NEWSLATTER_FROMEMAIL")]
+        [RequiredIf]
         public bool NewslatterFromemail { get; set; }
+
+
         [Column("NEWSLATTER_FROMSMS")]
+        [RequiredIf]
         public bool NewslatterFromsms { get; set; }
+
+
         [Column("KVKK")]
+        [RequiredIf]
         public byte Kvkk { get; set; }
+
+
         [Column("TITLE")]
         [StringLength(10)]
+        
         public string? Title { get; set; }
+
+
         [Column("BONUS_CARDTYPE")]
         [StringLength(150)]
+        
         public string? BonusCardtype { get; set; }
+
+
         [Column("BONUS_LEFT")]
+        [RequiredIf]
         public double BonusLeft { get; set; }
+
+
         [Column("BONUS_EXPRIED")]
+        [RequiredIf]
         public double BonusExpried { get; set; }
+
+
         [Column("BONUS_USED")]
+        [RequiredIf]
         public double BonusUsed { get; set; }
+
+
         [Column("BONUS_LEFTAMOUNT")]
+        [RequiredIf]
         public double BonusLeftamount { get; set; }
+
+
         [Column("BONUS_GAINED")]
+        [RequiredIf]
         public double BonusGained { get; set; }
+
+
         [Column("ENT_ID")]
         [StringLength(150)]
+        
         public string? EntId { get; set; }
+
+
         [Column("REPEAT_GUEST")]
+        [RequiredIf]
         public bool RepeatGuest { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.PersonAdduserNavigation))]
@@ -153,7 +255,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Person")]
         public virtual ICollection<Surveys> Surveys { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

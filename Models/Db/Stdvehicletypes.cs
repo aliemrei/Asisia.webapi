@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDVEHICLETYPES")]
-    public partial class Stdvehicletypes : EntityBase // My Handlebars Helper
+    public partial class Stdvehicletypes : EntityBase 
     {
         public Stdvehicletypes()
         {
@@ -18,17 +18,21 @@ namespace Asisia.webapi.Models.Db
         [Key]
         [Column("VEHICLETYPE")]
         [StringLength(40)]
+        [RequiredIf]
         public string Vehicletype { get; set; } = null!;
+
+
         [Column("IMGTYPE")]
         [StringLength(30)]
+        
         public string? Imgtype { get; set; }
+
+
 
         [InverseProperty("VehicletypeNavigation")]
         public virtual ICollection<TransferPrices> TransferPrices { get; set; }
         [InverseProperty("VehicletypeNavigation")]
         public virtual ICollection<Vehicletypes> Vehicletypes { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

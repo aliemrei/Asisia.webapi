@@ -7,21 +7,36 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CASHIER_HANDOVER_ENTITY")]
-    public partial class CashierHandoverEntity : EntityBase // My Handlebars Helper
+    public partial class CashierHandoverEntity : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CASHIER_HANDOVERID")]
+        [RequiredIf]
         public Guid CashierHandoverid { get; set; }
+
+
         [Column("ENTITY_TYPE")]
+        [RequiredIf]
         public byte EntityType { get; set; }
+
+
         [Column("DEBT")]
+        [RequiredIf]
         public double Debt { get; set; }
+
+
         [Column("CURCODE")]
         [StringLength(5)]
         [Unicode(false)]
+        [RequiredIf]
         public string Curcode { get; set; } = null!;
+
+
 
         [ForeignKey(nameof(CashierHandoverid))]
         [InverseProperty("CashierHandoverEntity")]
@@ -30,7 +45,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("CashierHandoverEntity")]
         public virtual Curcode CurcodeNavigation { get; set; } = null!;
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

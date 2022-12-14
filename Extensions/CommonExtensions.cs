@@ -19,7 +19,12 @@ public static class CommonExtensions
     {
       // Sanitise the exposed data when in release mode.
       // We do not want to give the public access to stack traces, etc!
+      
       error.Message = DefaultODataErrorMessage;
+
+      if (error.Details.Count() > 0)
+          error.Message = error.Details.First().Message;
+
       error.Details = new[] { new ODataErrorDetail { Message = convertedError.Message } };
     }
 
@@ -30,7 +35,7 @@ public static class CommonExtensions
   {
     var error = new ODataError();
 
-    if (isDevelopment)
+    if (!isDevelopment)
     {
       error.Message = ex.Message;
       error.InnerError = new ODataInnerError(ex);
@@ -39,6 +44,8 @@ public static class CommonExtensions
     {
       error.Message = DefaultODataErrorMessage;
       error.Details = new[] { new ODataErrorDetail { Message = ex.Message } };
+      if (error.Details.Count() > 0)
+          error.Message = error.Details.First().Message;
     }
 
     return error;

@@ -35,7 +35,6 @@ namespace Asisia.webapi.Models.Db
 
         partial void OnModelCreatingPartial(ModelBuilder modelBuilder)
         {
-
             var setQueryFilterMethod = new Action<ModelBuilder>(SetQueryFilter<EntityBase>)
                     .Method.GetGenericMethodDefinition();
 
@@ -49,6 +48,12 @@ namespace Asisia.webapi.Models.Db
                             .Invoke(this, new object[] { modelBuilder });
                 }
             }
+
+            modelBuilder.Entity<Request>()
+            
+                
+               .Ignore(x => x.Sellingdate)
+               .Ignore(x => x.Sellingtime);
         } 
 
         public T CreateEntity<T>(T? obj = null) where T : class, new()

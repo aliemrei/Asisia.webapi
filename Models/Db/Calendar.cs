@@ -7,15 +7,19 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CALENDAR")]
-    public partial class Calendar : EntityBase // My Handlebars Helper
+    public partial class Calendar : EntityBase 
     {
         [Key]
         [Column("DATE", TypeName = "date")]
+        [RequiredIf]
         public DateTime Date { get; set; }
+
+
         [Column("DAYOFWEEK")]
+        
         public byte? Dayofweek { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+
+
+            }
 }

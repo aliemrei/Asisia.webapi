@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CASHIER_HANDOVER")]
-    public partial class CashierHandover : EntityBase // My Handlebars Helper
+    public partial class CashierHandover : EntityBase 
     {
         public CashierHandover()
         {
@@ -16,23 +16,50 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("USERID")]
+        [RequiredIf]
         public Guid Userid { get; set; }
+
+
         [Column("RESOURCEID")]
+        [RequiredIf]
         public Guid Resourceid { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("ISENDDATE")]
+        [RequiredIf]
         public bool Isenddate { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.CashierHandoverAdduserNavigation))]
@@ -52,7 +79,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("CashierHandover")]
         public virtual ICollection<CashierHandoverEntity> CashierHandoverEntity { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

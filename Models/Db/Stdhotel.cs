@@ -12,7 +12,7 @@ namespace Asisia.webapi.Models.Db
     [Index(nameof(Name), Name = "IX_STDHOTEL_2")]
     [Index(nameof(Name), Name = "IX_STDHOTEL_3")]
     [Index(nameof(Adddate), Name = "IX_STDHOTEL_4")]
-    public partial class Stdhotel : EntityBase // My Handlebars Helper
+    public partial class Stdhotel : EntityBase 
     {
         public Stdhotel()
         {
@@ -37,95 +37,203 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("NAME")]
         [StringLength(70)]
+        [RequiredIf]
         public string Name { get; set; } = null!;
+
+
         [Column("ADDRESSID")]
+        
         public Guid? Addressid { get; set; }
+
+
         [Column("TEL1")]
+        
         public long? Tel1 { get; set; }
+
+
         [Column("TEL2")]
+        
         public long? Tel2 { get; set; }
+
+
         [Column("EMAIL")]
         [StringLength(200)]
+        
         public string? Email { get; set; }
+
+
         [Column("FAX")]
+        
         public long? Fax { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("CONTACT")]
         [StringLength(200)]
+        
         public string? Contact { get; set; }
+
+
         [Column("WEBADDRESS")]
         [StringLength(250)]
+        
         public string? Webaddress { get; set; }
+
+
         [Column("HOMEPAGEURL")]
         [StringLength(350)]
+        
         public string? Homepageurl { get; set; }
+
+
         [Column("TEMPLATENAME")]
         [StringLength(50)]
+        
         public string? Templatename { get; set; }
+
+
         [Column("THUMBNAILURL")]
         [StringLength(350)]
+        
         public string? Thumbnailurl { get; set; }
+
+
         [Column("HOTEL_DESCRIPTION")]
+        
         public string? HotelDescription { get; set; }
+
+
         [Column("RAKAM_ID")]
         [StringLength(15)]
+        
         public string? RakamId { get; set; }
+
+
         [Column("CHECKINTIME", TypeName = "datetime")]
+        
         public DateTime? Checkintime { get; set; }
+
+
         [Column("CHECKOUTTIME", TypeName = "datetime")]
+        
         public DateTime? Checkouttime { get; set; }
+
+
         [Column("TRIPADVISORID")]
         [StringLength(50)]
+        
         public string? Tripadvisorid { get; set; }
+
+
         [Column("URL_BLOGGER")]
         [StringLength(250)]
+        
         public string? UrlBlogger { get; set; }
+
+
         [Column("URL_FLICKER")]
         [StringLength(250)]
+        
         public string? UrlFlicker { get; set; }
+
+
         [Column("URL_FOURSQUARE")]
         [StringLength(250)]
+        
         public string? UrlFoursquare { get; set; }
+
+
         [Column("URL_GOOGLEPLUS")]
         [StringLength(250)]
+        
         public string? UrlGoogleplus { get; set; }
+
+
         [Column("URL_INSTAGRAM")]
         [StringLength(250)]
+        
         public string? UrlInstagram { get; set; }
+
+
         [Column("URL_VINE")]
         [StringLength(250)]
+        
         public string? UrlVine { get; set; }
+
+
         [Column("URL_FACEBOOK")]
         [StringLength(250)]
+        
         public string? UrlFacebook { get; set; }
+
+
         [Column("FACTSHEETURL")]
         [StringLength(250)]
+        
         public string? Factsheeturl { get; set; }
+
+
         [Column("STARS")]
+        
         public double? Stars { get; set; }
+
+
         [Column("FACTSHEETURL2")]
         [StringLength(250)]
+        
         public string? Factsheeturl2 { get; set; }
+
+
         [Column("THUMBNAILMAXWIDTH")]
+        [RequiredIf]
         public int Thumbnailmaxwidth { get; set; }
+
+
         [Column("SETURID")]
+        
         public int? Seturid { get; set; }
+
+
 
         [ForeignKey(nameof(Addressid))]
         [InverseProperty(nameof(LocationAddress.Stdhotel))]
@@ -174,7 +282,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Hotel")]
         public virtual ICollection<TourProgram> TourProgram { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

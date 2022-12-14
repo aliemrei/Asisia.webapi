@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDLANGUAGES")]
-    public partial class Stdlanguages : EntityBase // My Handlebars Helper
+    public partial class Stdlanguages : EntityBase 
     {
         public Stdlanguages()
         {
@@ -21,10 +21,16 @@ namespace Asisia.webapi.Models.Db
         [Column("CODE")]
         [StringLength(6)]
         [Unicode(false)]
+        [RequiredIf]
         public string Code { get; set; } = null!;
+
+
         [Column("DEFINITION")]
         [StringLength(100)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
 
         [InverseProperty("LangNavigation")]
         public virtual ICollection<PortalSeo> PortalSeo { get; set; }
@@ -35,7 +41,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("LangcodeNavigation")]
         public virtual ICollection<VirtualPosPaymentTemps> VirtualPosPaymentTemps { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -11,7 +11,7 @@ namespace Asisia.webapi.Models.Db
     [Index(nameof(Adddate), Name = "IX_VIRTUAL_POS_PAYMENT_REQUESTS_1")]
     [Index(nameof(Adddate), nameof(Isdeleted), nameof(Corpid), Name = "IX_VIRTUAL_POS_PAYMENT_REQUESTS_2")]
     [Index(nameof(Isdeleted), Name = "IX_VIRTUAL_POS_PAYMENT_REQUESTS_3")]
-    public partial class VirtualPosPaymentRequests : EntityBase // My Handlebars Helper
+    public partial class VirtualPosPaymentRequests : EntityBase 
     {
         public VirtualPosPaymentRequests()
         {
@@ -23,83 +23,188 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("PORTALUID")]
+        [RequiredIf]
         public Guid Portaluid { get; set; }
+
+
         [Column("LANGCODE")]
         [StringLength(6)]
         [Unicode(false)]
+        [RequiredIf]
         public string Langcode { get; set; } = null!;
+
+
         [Column("DESCRIPTION")]
         [StringLength(150)]
+        [RequiredIf]
         public string Description { get; set; } = null!;
+
+
         [Column("USEINSTALLMENTS")]
+        [RequiredIf]
         public bool Useinstallments { get; set; }
+
+
         [Required]
         [Column("USEEMAIL")]
+        
         public bool? Useemail { get; set; }
+
+
         [Column("USESMS")]
+        [RequiredIf]
         public bool Usesms { get; set; }
+
+
         [Column("PRICECHANGEABLE")]
+        [RequiredIf]
         public bool Pricechangeable { get; set; }
+
+
         [Column("EMAILTEMPID")]
+        
         public Guid? Emailtempid { get; set; }
+
+
         [Column("SMSTEMPID")]
+        
         public Guid? Smstempid { get; set; }
+
+
         [Column("EMAILTEXT")]
+        
         public string? Emailtext { get; set; }
+
+
         [Column("SMSTEXT")]
+        
         public string? Smstext { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("TITLE")]
         [StringLength(150)]
+        
         public string? Title { get; set; }
+
+
         [Column("PRICE")]
+        [RequiredIf]
         public double Price { get; set; }
+
+
         [Column("CURCODE")]
         [StringLength(4)]
         [Unicode(false)]
+        [RequiredIf]
         public string Curcode { get; set; } = null!;
+
+
         [Column("PIECE")]
+        [RequiredIf]
         public int Piece { get; set; }
+
+
         [Column("PAYMENT_DESCRIPTION")]
+        
         public string? PaymentDescription { get; set; }
+
+
         [Column("PAYMENT_TEXT")]
+        
         public string? PaymentText { get; set; }
+
+
         [Column("PAYMENT_SUCCESSTEXT")]
+        
         public string? PaymentSuccesstext { get; set; }
+
+
         [Column("PAYMENT_ERRORTEXT")]
+        
         public string? PaymentErrortext { get; set; }
+
+
         [Column("SMS_TEXT")]
+        
         public string? SmsText1 { get; set; }
+
+
         [Column("SMS_SUCCESSTEXT")]
+        
         public string? SmsSuccesstext { get; set; }
+
+
         [Column("SMS_ERRORTEXT")]
+        
         public string? SmsErrortext { get; set; }
+
+
         [Column("SDATE", TypeName = "datetime")]
+        
         public DateTime? Sdate { get; set; }
+
+
         [Column("FDATE", TypeName = "datetime")]
+        
         public DateTime? Fdate { get; set; }
+
+
         [Column("PAYMENTTEMPID")]
+        
         public Guid? Paymenttempid { get; set; }
+
+
         [Column("CANDIV_PAYMENT")]
+        
         public bool? CandivPayment { get; set; }
+
+
         [Column("RESNUMBER")]
         [StringLength(50)]
+        
         public string? Resnumber { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.VirtualPosPaymentRequestsAdduserNavigation))]
@@ -129,7 +234,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("PaymentRequest")]
         public virtual ICollection<VirtualPosPayments> VirtualPosPayments { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDSTORE_ITEMS")]
     [Index(nameof(Storeid), nameof(Definition), Name = "UQ__STDSTORE__C467D422F4172951", IsUnique = true)]
-    public partial class StdstoreItems : EntityBase // My Handlebars Helper
+    public partial class StdstoreItems : EntityBase 
     {
         public StdstoreItems()
         {
@@ -21,26 +21,56 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("STOREID")]
+        [RequiredIf]
         public Guid Storeid { get; set; }
+
+
         [Column("DEFINITION")]
         [StringLength(200)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
         [Column("DESCRIPTION")]
+        
         public string? Description { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
 
         [InverseProperty("Item")]
         public virtual ICollection<StdstoreItemGroupItems> StdstoreItemGroupItems { get; set; }
@@ -53,7 +83,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Item")]
         public virtual ICollection<StdstoreItemsGroups> StdstoreItemsGroups { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

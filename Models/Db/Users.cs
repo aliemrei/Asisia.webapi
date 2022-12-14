@@ -9,7 +9,7 @@ namespace Asisia.webapi.Models.Db
     [Table("USERS")]
     [Index(nameof(Moduleid), Name = "IX_USERS")]
     [Index(nameof(Username), Name = "IX_USERS_1", IsUnique = true)]
-    public partial class Users : EntityBase // My Handlebars Helper
+    public partial class Users : EntityBase 
     {
         public Users()
         {
@@ -171,49 +171,106 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("CORPID")]
+        [RequiredIf]
         public Guid Corpid { get; set; }
+
+
         [Column("USERNAME")]
         [StringLength(100)]
+        [RequiredIf]
         public string Username { get; set; } = null!;
+
+
         [Column("PASSWORD")]
         [StringLength(100)]
+        
         public string? Password { get; set; }
+
+
         [Column("SYSTEMADMIN")]
+        [RequiredIf]
         public bool Systemadmin { get; set; }
+
+
         [Column("FIRSTNAME")]
         [StringLength(100)]
+        [RequiredIf]
         public string Firstname { get; set; } = null!;
+
+
         [Column("LASTNAME")]
         [StringLength(100)]
+        [RequiredIf]
         public string Lastname { get; set; } = null!;
+
+
         [Column("FULLNAME")]
         [StringLength(201)]
+        [RequiredIf]
         public string Fullname { get; set; } = null!;
+
+
         [Column("TEL1")]
+        
         public long? Tel1 { get; set; }
+
+
         [Column("TEL2")]
+        
         public long? Tel2 { get; set; }
+
+
         [Column("EMAIL")]
         [StringLength(200)]
+        
         public string? Email { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("MUSTCHANGEPASWORD_NEXTLOGON")]
+        [RequiredIf]
         public bool MustchangepaswordNextlogon { get; set; }
+
+
         [Column("MODULEID")]
+        
         public Guid? Moduleid { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.InverseAdduserNavigation))]
@@ -533,7 +590,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(VirtualPosPayments.EdituserNavigation))]
         public virtual ICollection<VirtualPosPayments> VirtualPosPaymentsEdituserNavigation { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

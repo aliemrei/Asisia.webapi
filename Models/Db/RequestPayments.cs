@@ -7,30 +7,60 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("REQUEST_PAYMENTS")]
-    public partial class RequestPayments : EntityBase // My Handlebars Helper
+    public partial class RequestPayments : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("REQUEST_DETAILID")]
+        [RequiredIf]
         public Guid RequestDetailid { get; set; }
+
+
         [Column("VIRTUAL_POS_PAYMENTID")]
+        
         public Guid? VirtualPosPaymentid { get; set; }
+
+
         [Column("RATE")]
+        
         public double? Rate { get; set; }
+
+
         [Column("VIRTUAL_POS_DEP_PAYMENTID")]
+        
         public Guid? VirtualPosDepPaymentid { get; set; }
+
+
         [Column("VIRTUAL_POS_PAYMENT_CANCELID")]
+        
         public Guid? VirtualPosPaymentCancelid { get; set; }
+
+
         [Column("VIRTUAL_POS_DEP_PAYMENT_CANCELID")]
+        
         public Guid? VirtualPosDepPaymentCancelid { get; set; }
+
+
         [Column("CANCEL_RATE")]
+        
         public double? CancelRate { get; set; }
+
+
         [Column("PAYMENTID")]
+        
         public Guid? Paymentid { get; set; }
+
+
         [Column("ENTID")]
         [StringLength(150)]
+        
         public string? Entid { get; set; }
+
+
 
         [ForeignKey(nameof(Paymentid))]
         [InverseProperty(nameof(Payments.RequestPayments))]
@@ -51,7 +81,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(VirtualPosPaymentsCancel.RequestPayments))]
         public virtual VirtualPosPaymentsCancel? VirtualPosPaymentCancel { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

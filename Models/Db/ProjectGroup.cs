@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("PROJECT_GROUP")]
     [Index(nameof(RakamId), Name = "IX_PROJECT_GROUP")]
-    public partial class ProjectGroup : EntityBase // My Handlebars Helper
+    public partial class ProjectGroup : EntityBase 
     {
         public ProjectGroup()
         {
@@ -25,55 +25,118 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("NAME")]
         [StringLength(150)]
+        [RequiredIf]
         public string Name { get; set; } = null!;
+
+
         [Column("CORPID")]
+        
         public Guid? Corpid { get; set; }
+
+
         [Column("MERGECLIENTS")]
+        [RequiredIf]
         public bool Mergeclients { get; set; }
+
+
         [Column("USEALTERNATES")]
+        [RequiredIf]
         public bool Usealternates { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("ENT_ID")]
         [StringLength(25)]
+        
         public string? EntId { get; set; }
+
+
         [Column("ENT_URL")]
         [StringLength(150)]
+        
         public string? EntUrl { get; set; }
+
+
         [Column("RAKAM_ID")]
         [StringLength(15)]
+        
         public string? RakamId { get; set; }
+
+
         [Column("ACC_CODE")]
         [StringLength(30)]
+        
         public string? AccCode { get; set; }
+
+
         [Column("ENT_USE")]
+        [RequiredIf]
         public bool EntUse { get; set; }
+
+
         [Column("RES_MAILURL")]
         [StringLength(250)]
+        
         public string? ResMailurl { get; set; }
+
+
         [Column("ENT_SETURURL")]
         [StringLength(250)]
+        
         public string? EntSetururl { get; set; }
+
+
         [Column("ENT_SETURAPIKEY")]
         [StringLength(150)]
+        
         public string? EntSeturapikey { get; set; }
+
+
         [Column("DONTSTORE_CCARDS")]
+        
         public bool? DontstoreCcards { get; set; }
+
+
         [Column("ADDRESSID")]
+        
         public Guid? Addressid { get; set; }
+
+
 
         [ForeignKey(nameof(Addressid))]
         [InverseProperty(nameof(LocationAddress.ProjectGroup))]
@@ -106,7 +169,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("ProjectGroup")]
         public virtual ICollection<UserProjects> UserProjects { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

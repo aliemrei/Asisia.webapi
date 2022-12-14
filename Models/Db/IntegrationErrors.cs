@@ -7,18 +7,25 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("INTEGRATION_ERRORS")]
-    public partial class IntegrationErrors : EntityBase // My Handlebars Helper
+    public partial class IntegrationErrors : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public int Id { get; set; }
+
+
         [Column("INSERTID")]
+        
         public int? Insertid { get; set; }
+
+
         [Column("ERRORTEXT")]
         [StringLength(255)]
+        
         public string? Errortext { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+
+
+            }
 }

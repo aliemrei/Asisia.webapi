@@ -48,12 +48,13 @@ namespace Asisia.webapi
             var myHelper = (helperName: "my-helper", helperFunction: (Action<EncodedTextWriter, Context, Arguments>)MyHbsHelper);
 
             // Register Handlebars block helper
-            var ifCondHelper = (helperName: "ifCond", helperFunction: (Action<EncodedTextWriter, BlockHelperOptions, Context, Arguments>)MyHbsBlockHelper);
+            //var ifCondHelper = (helperName: "ifCond", helperFunction: (Action<EncodedTextWriter, BlockHelperOptions, Context, Arguments>)MyHbsBlockHelper);
+            var ifRequiredHelper = (helperName: "ifRequired", helperFunction: (Action<EncodedTextWriter, BlockHelperOptions, Context, Arguments>)ifRequired);
 
             // Add optional Handlebars helpers
             services.AddHandlebarsHelpers(myHelper);
-            services.AddHandlebarsBlockHelpers(ifCondHelper);
-
+            //services.AddHandlebarsBlockHelpers(ifCondHelper);
+            services.AddHandlebarsBlockHelpers(ifRequiredHelper);
             // Add Handlebars transformer for Country property
             /*
             services.AddHandlebarsTransformers(
@@ -82,9 +83,15 @@ namespace Asisia.webapi
         // Sample Handlebars helper
         void MyHbsHelper(EncodedTextWriter writer, Context context, Arguments parameters)
         {
-            writer.Write("// My Handlebars Helper");
+            writer.Write("//" + context.Value.ToString()) ;
         }
 
+        void ifRequired(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments args)
+        {
+            var val = args[0]?.ToString();
+            if (!val.EndsWith("?"))
+                writer.Write("[RequiredIf]");
+        }
         // Sample Handlebars block helper
         void MyHbsBlockHelper(EncodedTextWriter writer, BlockHelperOptions options, Context context, Arguments args)
         {

@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Claims;
 
 namespace Asisia.webapi.JWT;
@@ -29,3 +31,4 @@ public class AuthorizeODataFilter : IAuthorizationFilter
         }
     }
 }
+

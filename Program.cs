@@ -12,7 +12,8 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Asisia.webapi.JWT;
-using System.Text.Json;
+using Microsoft.OData;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,9 +40,10 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<Asisia.webapi.Models.Db.DBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
-}, ServiceLifetime.Scoped);
+}, Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped);
 
 /*
 builder.Services.AddDbContextFactory<Asisia.webapi.Models.DBContext>(options =>
@@ -64,29 +66,39 @@ builder.Services.AddScoped<IGenericRepository<ProjectGroupdetail>, ProjectGroupD
 builder.Services.AddScoped<IGenericRepository<Country>, CountyRepository>();
 builder.Services.AddScoped<IGenericRepository<Resources>, ResourcesRepository>();
 builder.Services.AddScoped<IGenericRepository<Curcode>, CurrenciesRepository>();
-
+builder.Services.AddScoped<IGenericRepository<VwLocations>, VwLocationsRepository>();
+builder.Services.AddScoped<IGenericRepository<PromotionCodes>, RepositoryBase<PromotionCodes>>();
 
 
 
 IEdmModel modelv1 = EdmModelBuilder.GetEdmModelV1();
 
-builder.Services.AddControllers(options => { 
-        options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
-    })
+ 
+builder.Services.AddControllers()
     .AddJsonOptions(options => {
-            options.JsonSerializerOptions.PropertyNamingPolicy = null;
-            options.JsonSerializerOptions.MaxDepth = 5;
+            
+            options.JsonSerializerOptions.PropertyNamingPolicy =  null; // to don't change property names lowercase
+            //options.JsonSerializerOptions.DictionaryKeyPolicy = null;
+            //options.JsonSerializerOptions.WriteIndented = true;
+             
+            //options.JsonSerializerOptions.MaxDepth = 5;
     })
     .AddOData(opt => opt.Count().Filter().Expand().Select().OrderBy().SetMaxTop(1000).SkipToken().EnableQueryFeatures(null)
-        //.AddRouteComponents(model0)
-        //.AddRouteComponents("v1", model1)
-        //.AddRouteComponents("v2{data}", model2, services => services.AddSingleton<ODataBatchHandler, DefaultODataBatchHandler>())
-        .AddRouteComponents("v2", modelv1)
+    
+        .AddRouteComponents("v2", modelv1, action =>
+                {
+                    
+                    // To convert Guid.Empty values to "" (empty string);
+                    action.AddSingleton( typeof(ODataPayloadValueConverter), pvc => new CustomPayloadValueConverter());
+                    // To handle gets model datas
+                    //action.AddSingleton<IODataDeserializerProvider, CustomResourceDeserializerProvider>();
+                })
          
-        //.Conventions.Add(new MyConvention())
+   
     );
+    
+ 
 
-  
 var key = Encoding.ASCII.GetBytes(Settings.Secret);
 builder.Services.AddAuthentication(x =>
 {
@@ -127,7 +139,7 @@ if (app.Environment.IsDevelopment())
     
 
 //Convert errors a json object and change error's content if the environment state is development
-/*
+
 app.UseExceptionHandler(appBuilder =>
   {
     appBuilder.Use(async (context, next) =>
@@ -135,7 +147,17 @@ app.UseExceptionHandler(appBuilder =>
       var error = context.Features[typeof(IExceptionHandlerFeature)] as IExceptionHandlerFeature;
       if (error?.Error != null)
       {
-        context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        if (error.Error is DbUpdateException || error.Error?.InnerException is DbUpdateException)
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+             
+            //context.Response.
+        }
+        else 
+        {
+            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+        }
+        
         context.Response.ContentType = "application/json";
 
         var response = error.Error.CreateODataError(app.Environment.IsDevelopment());
@@ -146,8 +168,7 @@ app.UseExceptionHandler(appBuilder =>
       else await next();
     });
   });
-  */
- 
+
 
 app.UseHttpsRedirection();
 
@@ -155,7 +176,7 @@ app.UseAuthorization();
 
 app.UseAuthentication();
 
- app.UseCors("AllowAllOrigins");
+app.UseCors("AllowAllOrigins");
  
 app.MapControllers();
 
@@ -163,5 +184,8 @@ app.Run();
 
 
 /*
+
+don't forget to change  <!--<Nullable>enable</Nullable>--> to  <Nullable>enable</Nullable> in the .csproj file before execute the code
+
 dotnet ef dbcontext scaffold "Data Source=192.168.1.121;initial catalog=ASISIA_DEMO;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer -o Models/Db -c DBContext -d -f  --no-pluralize --data-annotations
 */

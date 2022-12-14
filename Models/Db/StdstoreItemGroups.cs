@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("STDSTORE_ITEM_GROUPS")]
     [Index(nameof(Storeid), nameof(Definition), Name = "UQ__STDSTORE__C467D422F9DABF61", IsUnique = true)]
-    public partial class StdstoreItemGroups : EntityBase // My Handlebars Helper
+    public partial class StdstoreItemGroups : EntityBase 
     {
         public StdstoreItemGroups()
         {
@@ -18,35 +18,77 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("STOREID")]
+        [RequiredIf]
         public Guid Storeid { get; set; }
+
+
         [Column("DEFINITION")]
         [StringLength(120)]
+        [RequiredIf]
         public string Definition { get; set; } = null!;
+
+
         [Column("DESCRIPTION")]
+        
         public string? Description { get; set; }
+
+
         [Column("SHOWINPORTAL")]
+        [RequiredIf]
         public bool Showinportal { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("THUMBNAILURL")]
         [StringLength(350)]
+        
         public string? Thumbnailurl { get; set; }
+
+
         [Column("TITLE")]
+        
         public string? Title { get; set; }
+
+
         [Column("SORTINDEX")]
+        [RequiredIf]
         public int Sortindex { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.StdstoreItemGroupsAdduserNavigation))]
@@ -62,7 +104,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Group")]
         public virtual ICollection<StdstoreItemsGroups> StdstoreItemsGroups { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

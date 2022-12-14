@@ -8,7 +8,7 @@ namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("CORP")]
     [Index(nameof(Intid), Name = "IX_CORP")]
-    public partial class Corp : EntityBase // My Handlebars Helper
+    public partial class Corp : EntityBase 
     {
         public Corp()
         {
@@ -68,55 +68,121 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("INTID")]
+        [RequiredIf]
         public int Intid { get; set; }
+
+
         [Column("NAME")]
         [StringLength(200)]
+        
         public string? Name { get; set; }
+
+
         [Column("ADDRESSID")]
+        
         public Guid? Addressid { get; set; }
+
+
         [Column("TEL1")]
+        
         public long? Tel1 { get; set; }
+
+
         [Column("TEL2")]
+        
         public long? Tel2 { get; set; }
+
+
         [Column("EMAIL")]
         [StringLength(200)]
+        
         public string? Email { get; set; }
+
+
         [Column("FAX")]
+        
         public int? Fax { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ISDISABLED")]
+        [RequiredIf]
         public bool Isdisabled { get; set; }
+
+
         [Column("ADDUSER")]
+        
         public Guid? Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("CONTACT")]
         [StringLength(150)]
+        
         public string? Contact { get; set; }
+
+
         [Column("TAXAUTH")]
         [StringLength(100)]
+        
         public string? Taxauth { get; set; }
+
+
         [Column("TAXNO")]
         [StringLength(30)]
+        
         public string? Taxno { get; set; }
+
+
         [Column("GA_CUSTOMERID")]
         [StringLength(15)]
+        
         public string? GaCustomerid { get; set; }
+
+
         [Column("AUTO_RESMAIL_CLIENT")]
+        
         public Guid? AutoResmailClient { get; set; }
+
+
         [Column("AUTO_RESMAIL_HOST")]
+        
         public Guid? AutoResmailHost { get; set; }
+
+
         [Column("AUTO_PASSWORD_FORGET")]
+        
         public Guid? AutoPasswordForget { get; set; }
+
+
         [Column("SWITCHBOARDID")]
+        
         public Guid? Switchboardid { get; set; }
+
+
 
         [ForeignKey(nameof(Addressid))]
         [InverseProperty(nameof(LocationAddress.Corp))]
@@ -241,7 +307,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Corp")]
         public virtual ICollection<VirtualPosPayments> VirtualPosPayments { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

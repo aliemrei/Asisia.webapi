@@ -37,6 +37,11 @@ public static class EdmModelBuilder
             .ReturnsCollectionFromEntitySet<ProjectGroupdetail>("ProjectGroupDetail")
             .Parameter<Guid>("ProjectId");
 
+        
+        builder.EntitySet<VwLocations>("VwLocations");
+        builder.EntitySet<PromotionCodes>("PromotionCodes");
+
+/*
         builder.EntityType<Request>().Collection
                 .Function("AddNew")
                 .ReturnsCollectionFromEntitySet<Request>("Request");
@@ -44,7 +49,7 @@ public static class EdmModelBuilder
         builder.EntityType<Country>().Collection
                .Function("AddNew")
                .ReturnsCollectionFromEntitySet<Country>("Countries");
-
+*/
 
         EdmEntityContainer container = new EdmEntityContainer(builder.Namespace, builder.ContainerName);
 

@@ -7,16 +7,20 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Keyless]
-    public partial class SntDiagramChildkeys : EntityBase // My Handlebars Helper
+    public partial class SntDiagramChildkeys : EntityBase 
     {
         [Column("key")]
         [StringLength(15)]
         [Unicode(false)]
+        [RequiredIf]
         public string Key { get; set; } = null!;
+
+
         [Column("dataKey")]
+        [RequiredIf]
         public Guid DataKey { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+
+
+            }
 }

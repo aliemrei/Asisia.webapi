@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("SURVEYS")]
-    public partial class Surveys : EntityBase // My Handlebars Helper
+    public partial class Surveys : EntityBase 
     {
         public Surveys()
         {
@@ -17,21 +17,45 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("PERSONID")]
+        
         public Guid? Personid { get; set; }
+
+
         [Column("SURVEYID")]
+        [RequiredIf]
         public Guid Surveyid { get; set; }
+
+
         [Column("STARTTIME", TypeName = "datetime")]
+        
         public DateTime? Starttime { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.SurveysAdduserNavigation))]
@@ -50,7 +74,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("Surveys")]
         public virtual ICollection<SurveyAnswers> SurveyAnswers { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

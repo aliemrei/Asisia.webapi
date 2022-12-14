@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("PORTAL_USER")]
-    public partial class PortalUser : EntityBase // My Handlebars Helper
+    public partial class PortalUser : EntityBase 
     {
         public PortalUser()
         {
@@ -16,22 +16,43 @@ namespace Asisia.webapi.Models.Db
 
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("PERSONID")]
+        
         public Guid? Personid { get; set; }
+
+
         [Column("PWD")]
         [StringLength(200)]
+        
         public string? Pwd { get; set; }
+
+
         [Column("CHANGEKEY")]
         [StringLength(50)]
+        
         public string? Changekey { get; set; }
+
+
         [Column("CHANGEDATE", TypeName = "datetime")]
+        
         public DateTime? Changedate { get; set; }
+
+
         [Column("EMAIL")]
         [StringLength(250)]
+        
         public string? Email { get; set; }
+
+
         [Column("PHONE")]
+        
         public long? Phone { get; set; }
+
+
 
         [ForeignKey(nameof(Personid))]
         [InverseProperty("PortalUser")]
@@ -39,7 +60,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("User")]
         public virtual ICollection<PortalUserSocialaccount> PortalUserSocialaccount { get; set; }
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

@@ -7,35 +7,74 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("PERSON_BONUS")]
-    public partial class PersonBonus : EntityBase // My Handlebars Helper
+    public partial class PersonBonus : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("PERSONID")]
+        [RequiredIf]
         public Guid Personid { get; set; }
+
+
         [Column("TYPEID")]
+        [RequiredIf]
         public Guid Typeid { get; set; }
+
+
         [Column("DATE", TypeName = "date")]
+        
         public DateTime? Date { get; set; }
+
+
         [Column("POINT")]
+        [RequiredIf]
         public double Point { get; set; }
+
+
         [Column("PRODUCTID")]
+        
         public Guid? Productid { get; set; }
+
+
         [Column("REQUEST_DETAILID")]
+        
         public Guid? RequestDetailid { get; set; }
+
+
         [Column("ISDELETED")]
+        [RequiredIf]
         public bool Isdeleted { get; set; }
+
+
         [Column("ADDUSER")]
+        [RequiredIf]
         public Guid Adduser { get; set; }
+
+
         [Column("ADDDATE", TypeName = "datetime")]
+        [RequiredIf]
         public DateTime Adddate { get; set; }
+
+
         [Column("EDITUSER")]
+        
         public Guid? Edituser { get; set; }
+
+
         [Column("EDITDATE", TypeName = "datetime")]
+        
         public DateTime? Editdate { get; set; }
+
+
         [Column("AMOUNT")]
+        [RequiredIf]
         public double Amount { get; set; }
+
+
 
         [ForeignKey(nameof(Adduser))]
         [InverseProperty(nameof(Users.PersonBonusAdduserNavigation))]
@@ -53,7 +92,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty(nameof(PersonBonusTypes.PersonBonus))]
         public virtual PersonBonusTypes Type { get; set; } = null!;
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }

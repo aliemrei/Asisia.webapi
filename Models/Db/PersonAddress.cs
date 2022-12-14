@@ -7,15 +7,24 @@ using Microsoft.EntityFrameworkCore;
 namespace Asisia.webapi.Models.Db
 { // Comment
     [Table("PERSON_ADDRESS")]
-    public partial class PersonAddress : EntityBase // My Handlebars Helper
+    public partial class PersonAddress : EntityBase 
     {
         [Key]
         [Column("ID")]
+        [RequiredIf]
         public Guid Id { get; set; }
+
+
         [Column("PERSONID")]
+        [RequiredIf]
         public Guid Personid { get; set; }
+
+
         [Column("ADDRESSID")]
+        
         public Guid? Addressid { get; set; }
+
+
 
         [ForeignKey(nameof(Addressid))]
         [InverseProperty(nameof(LocationAddress.PersonAddress))]
@@ -24,7 +33,5 @@ namespace Asisia.webapi.Models.Db
         [InverseProperty("PersonAddress")]
         public virtual Person Person { get; set; } = null!;
 
-        // My Handlebars Block Helper: True
-        // My Handlebars Block Helper: False
-    }
+            }
 }
