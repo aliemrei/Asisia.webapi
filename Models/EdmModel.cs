@@ -16,6 +16,9 @@ public static class EdmModelBuilder
     {
         var builder = new ODataConventionModelBuilder();
 
+
+        builder.EntitySet<Agency>("Agency");
+
         builder.EntitySet<Request>("Request");
         builder.EntitySet<Person>("Person");
         builder.EntitySet<RequestDetail>("RequestDetail");
