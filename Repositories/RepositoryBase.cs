@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Asisia.webapi.Repositories
 {
-    public class RepositoryBase<TEntity> : IGenericRepository<TEntity> where TEntity : class, new() 
+    public class RepositoryBase<TEntity> : IDisposable, IGenericRepository<TEntity> where TEntity : class, new() 
     {
         protected DBContext _context = null;
         protected DbSet<TEntity> _dbSet = null;
@@ -91,6 +91,24 @@ namespace Asisia.webapi.Repositories
         public virtual bool IsExists(Guid id)
         {
             return _dbSet.Any<TEntity>(b => EF.Property<Guid>(b, "Id") == id);
+        }
+
+        private bool disposed = false;
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!this.disposed)
+            {
+                if (disposing)
+                {
+                    _context.Dispose();
+                }
+            }
+            this.disposed = true;
+        }
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
     }
 }

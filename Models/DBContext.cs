@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq;
 using System.IO;
 
-using Microsoft.Extensions.DependencyModel;
+ 
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Http;
 using System.Linq.Expressions;
@@ -49,11 +49,7 @@ namespace Asisia.webapi.Models.Db
                 }
             }
 
-            modelBuilder.Entity<Request>()
-            
-                
-               .Ignore(x => x.Sellingdate)
-               .Ignore(x => x.Sellingtime);
+         
         } 
 
         public T CreateEntity<T>(T? obj = null) where T : class, new()

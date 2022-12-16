@@ -1,15 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using Asisia.webapi.Repositories;
+using Asisia.webapi.Services;
 using Asisia.webapi.Models.Db;
 using Microsoft.AspNetCore.OData.Query;
 
 namespace Asisia.webapi.Controllers;
 
 
-public sealed class ProjectGroupController : BaseController<ProjectGroup, IGenericRepository<ProjectGroup>>
+public sealed class ProjectGroupController : BaseController<ProjectGroup, IGenericService<ProjectGroup>>
 { 
-    public ProjectGroupController(ILogger<ProjectGroup> logger, DBContext context, 
-        IGenericRepository<ProjectGroup> repository) : base(logger, context, repository)
+    public ProjectGroupController(ILogger<ProjectGroup> logger,  
+        IGenericService<ProjectGroup> service) : base(logger, service)
     {
         
     }  
@@ -20,7 +20,7 @@ public sealed class ProjectGroupController : BaseController<ProjectGroup, IGener
     {
         if (Guid.TryParse(Request.HttpContext.User.Claims.FirstOrDefault(x => x.Type == "userId")?.Value, out var userId))
         {
-            IQueryable<ProjectGroup> result = _context.ProjectGroup.Where(p => p.UserProjects.Any(ug => ug.Userid == userId));
+            IQueryable<ProjectGroup> result = _service.GetAll().Where(p => p.UserProjects.Any(ug => ug.Userid == userId));
 
             return Ok(result);
         }

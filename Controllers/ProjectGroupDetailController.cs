@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using Asisia.webapi.Repositories;
+using Asisia.webapi.Services;
 using Asisia.webapi.Models.Db;
 using Microsoft.AspNetCore.OData.Query;
 using Microsoft.AspNetCore.OData.Formatter;
@@ -7,12 +7,15 @@ using Microsoft.AspNetCore.OData.Formatter;
 namespace Asisia.webapi.Controllers;
 
 
-public sealed class ProjectGroupDetailController : BaseController<ProjectGroupdetail, IGenericRepository<ProjectGroupdetail>>
-{ 
-    public ProjectGroupDetailController(ILogger<ProjectGroupdetail> logger, DBContext context, 
-        IGenericRepository<ProjectGroupdetail> repository) : base(logger, context, repository)
+public sealed class ProjectGroupDetailController : BaseController<ProjectGroupdetail, IGenericService<ProjectGroupdetail>>
+{
+    private readonly IGenericService<UserProjectDetails> _upd_Service;
+
+    public ProjectGroupDetailController(ILogger<ProjectGroupdetail> logger,   
+        IGenericService<ProjectGroupdetail> service,
+        IGenericService<UserProjectDetails> upd_service) : base(logger, service)
     {
-        
+        _upd_Service = upd_service;
     }   
 
     [HttpGet]
@@ -23,12 +26,12 @@ public sealed class ProjectGroupDetailController : BaseController<ProjectGroupde
 
         if (Guid.TryParse(User.Claims.FirstOrDefault(x => x.Type == "userId")?.Value, out var userId))
         {
-            isThereUserProjectDetailLimitation = _context.UserProjectDetails
+            isThereUserProjectDetailLimitation = _upd_Service.GetAll()
                 .Where(x => x.Userid == userId && x.ProjectGroupdetail.ProjectGroupid == ProjectId)
                 .Any();
         }
 
-        var q = _context.ProjectGroupdetail 
+        var q = _service.GetAll()
             .Where(x => x.ProjectGroupid == ProjectId 
                     && x.Isdisabled == false 
                     && (ProjectDetailId == null || (x.DontMerge == true && ProjectDetailId != null) || x.Id == ProjectDetailId)

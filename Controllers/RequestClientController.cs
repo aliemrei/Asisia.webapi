@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using Asisia.webapi.Repositories;
+using Asisia.webapi.Services;
 using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
-public sealed class RequestClientController : BaseController<RequestClients, IGenericRepository<RequestClients>>
+public sealed class RequestClientController : BaseController<RequestClients, IGenericService<RequestClients>>
 {
-    public RequestClientController(ILogger<RequestClients> logger, DBContext context, 
-        IGenericRepository<RequestClients> repository) : base(logger, context, repository)
+    public RequestClientController(ILogger<RequestClients> logger,  
+        IGenericService<RequestClients> service) : base(logger, service)
     {
         
     }     

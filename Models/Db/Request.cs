@@ -157,7 +157,7 @@ namespace Asisia.webapi.Models.Db
         
         public Guid? SellerUserid { get; set; }
 
-        [DatabaseGenerated(DatabaseGeneratedOption.Computed)]
+        
         [Column("SELL_DATE", TypeName = "datetime")]
         
         public DateTime? SellDate { get; private set; }

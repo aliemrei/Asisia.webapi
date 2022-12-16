@@ -13,7 +13,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Asisia.webapi.JWT;
 using Microsoft.OData;
-
+using Asisia.webapi.Services;
+using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,26 +56,90 @@ builder.Services.AddDbContextFactory<Asisia.webapi.Models.DBContext>(options =>
 
  */
 
- builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddScoped<IGenericRepository<Request>, RequestRepository>(); 
-builder.Services.AddScoped<IGenericRepository<Person>, PersonRepository>();
+builder.Services.AddScoped<IGenericService<Request>, RequestService>(serviceProvider => 
+      new RequestService(serviceProvider.GetRequiredService<IGenericRepository<Request>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<RequestDetail>, RequestDetailRepository>();
+builder.Services.AddScoped<IGenericService<RequestDetail>, RequestDetailService>(serviceProvider => 
+      new RequestDetailService(serviceProvider.GetRequiredService<IGenericRepository<RequestDetail>>()));
+
+
+builder.Services.AddScoped<IGenericRepository<Person>, PersonRepository>();
+builder.Services.AddScoped<IGenericService<Person>, ServiceBase<Person>>(serviceProvider => 
+      new ServiceBase<Person>(serviceProvider.GetRequiredService<IGenericRepository<Person>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<RequestClients>, RequestClientRepository>();
+builder.Services.AddScoped<IGenericService<RequestClients>, ServiceBase<RequestClients>>(serviceProvider => 
+      new ServiceBase<RequestClients>(serviceProvider.GetRequiredService<IGenericRepository<RequestClients>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<ProjectGroup>, ProjectGroupRepository>();
+builder.Services.AddScoped<IGenericService<ProjectGroup>, ServiceBase<ProjectGroup>>(serviceProvider => 
+      new ServiceBase<ProjectGroup>(serviceProvider.GetRequiredService<IGenericRepository<ProjectGroup>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<ProjectGroupdetail>, ProjectGroupDetailRepository>();
+builder.Services.AddScoped<IGenericService<ProjectGroupdetail>, ProjectGroupdetailService>(serviceProvider => 
+      new ProjectGroupdetailService(serviceProvider.GetRequiredService<IGenericRepository<ProjectGroupdetail>>()));
+
+
+builder.Services.AddScoped<IGenericRepository<UserProjectDetails>,  RepositoryBase<UserProjectDetails>>();
+builder.Services.AddScoped<IGenericService<Country>, ServiceBase<Country>>(serviceProvider => 
+      new ServiceBase<Country>(serviceProvider.GetRequiredService<IGenericRepository<Country>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<Country>, CountyRepository>();
+builder.Services.AddScoped<IGenericService<Country>, ServiceBase<Country>>(serviceProvider => 
+      new ServiceBase<Country>(serviceProvider.GetRequiredService<IGenericRepository<Country>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<Resources>, ResourcesRepository>();
+builder.Services.AddScoped<IGenericService<Resources>, ServiceBase<Resources>>(serviceProvider => 
+      new ServiceBase<Resources>(serviceProvider.GetRequiredService<IGenericRepository<Resources>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<Curcode>, CurrenciesRepository>();
+builder.Services.AddScoped<IGenericService<Curcode>, ServiceBase<Curcode>>(serviceProvider => 
+      new ServiceBase<Curcode>(serviceProvider.GetRequiredService<IGenericRepository<Curcode>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<VwLocations>, VwLocationsRepository>();
+builder.Services.AddScoped<IGenericService<VwLocations>, ServiceBase<VwLocations>>(serviceProvider => 
+      new ServiceBase<VwLocations>(serviceProvider.GetRequiredService<IGenericRepository<VwLocations>>()));
+
+
 builder.Services.AddScoped<IGenericRepository<PromotionCodes>, RepositoryBase<PromotionCodes>>();
+builder.Services.AddScoped<IGenericService<PromotionCodes>, ServiceBase<PromotionCodes>>(serviceProvider => 
+      new ServiceBase<PromotionCodes>(serviceProvider.GetRequiredService<IGenericRepository<PromotionCodes>>()));
 
 
+builder.Services.AddScoped<IGenericRepository<Users>, RepositoryBase<Users>>();
+builder.Services.AddScoped<IGenericService<Users>, ServiceBase<Users>>(serviceProvider => 
+      new ServiceBase<Users>(serviceProvider.GetRequiredService<IGenericRepository<Users>>()));
 
-IEdmModel modelv1 = EdmModelBuilder.GetEdmModelV1();
+
+builder.Services.AddScoped<IGenericRepository<UserProjectDetails>, RepositoryBase<UserProjectDetails>>();
+builder.Services.AddScoped<IGenericService<UserProjectDetails>, ServiceBase<UserProjectDetails>>(serviceProvider => 
+      new ServiceBase<UserProjectDetails>(serviceProvider.GetRequiredService<IGenericRepository<UserProjectDetails>>()));
+
+
+builder.Services.AddScoped<IGenericRepository<Agency>, RepositoryBase<Agency>>();
+builder.Services.AddScoped<IGenericService<Agency>, ServiceBase<Agency>>(serviceProvider => 
+      new ServiceBase<Agency>(serviceProvider.GetRequiredService<IGenericRepository<Agency>>()));
+
+
+ 
 
  
 builder.Services.AddControllers()
+    .ConfigureApplicationPartManager(manager => {
+        manager.FeatureProviders.Add(new BaseControllerFeatureProvider());
+    })
     .AddJsonOptions(options => {
             
             options.JsonSerializerOptions.PropertyNamingPolicy =  null; // to don't change property names lowercase
@@ -84,8 +149,8 @@ builder.Services.AddControllers()
             //options.JsonSerializerOptions.MaxDepth = 5;
     })
     .AddOData(opt => opt.Count().Filter().Expand().Select().OrderBy().SetMaxTop(1000).SkipToken().EnableQueryFeatures(null)
-    
-        .AddRouteComponents("v2", modelv1, action =>
+       
+        .AddRouteComponents("v2", EdmModelBuilder.GetEdmModelV1(), action =>
                 {
                     
                     // To convert Guid.Empty values to "" (empty string);
@@ -96,6 +161,8 @@ builder.Services.AddControllers()
          
    
     );
+
+   
     
  
 
@@ -136,6 +203,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+ 
     
 
 //Convert errors a json object and change error's content if the environment state is development

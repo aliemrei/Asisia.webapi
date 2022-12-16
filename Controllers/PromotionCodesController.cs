@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
-using Asisia.webapi.Repositories;
+using Asisia.webapi.Services;
 using Asisia.webapi.Models.Db;
 
 namespace Asisia.webapi.Controllers;
 
-public sealed class PromotionCodesController : BaseController<PromotionCodes, IGenericRepository<PromotionCodes>>
+public sealed class PromotionCodesController : BaseController<PromotionCodes, IGenericService<PromotionCodes>>
 {
-    public PromotionCodesController(ILogger<PromotionCodes> logger, DBContext context, 
-        IGenericRepository<PromotionCodes> repository) : base(logger, context, repository)
+    public PromotionCodesController(ILogger<PromotionCodes> logger, 
+        IGenericService<PromotionCodes> service) : base(logger, service)
     {
         
     }     
