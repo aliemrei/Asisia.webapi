@@ -2,32 +2,22 @@ using System.Reflection;
 using Asisia.webapi.Controllers;
 using Asisia.webapi.Models;
 using Asisia.webapi.Models.Db;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OData.Edm;
 using Microsoft.OData.ModelBuilder;
- 
+
 
 namespace Asisia.webapi.Models;
 
 public static class EdmModelBuilder
 {
- 
+
 
     public static IEdmModel GetEdmModelV1()
     {
-        var builder = new ODataConventionModelBuilder();
+        ODataConventionModelBuilder builder = new ODataConventionModelBuilder();
 
-
-        builder.EntitySet<Agency>("Agency");
-
-        builder.EntitySet<Request>("Request");
-        builder.EntitySet<Person>("Person");
-        builder.EntitySet<RequestDetail>("RequestDetail");
-        builder.EntitySet<RequestClients>("RequestClient");
-        builder.EntitySet<ProjectGroup>("ProjectGroup");
-        builder.EntitySet<ProjectGroupdetail>("ProjectGroupDetail");
-        builder.EntitySet<Country>("Countries");
-        builder.EntitySet<Resources>("Resources");
-        builder.EntitySet<Curcode>("Currencies");
+        AddEntities(builder);
 
         builder.EntityType<ProjectGroup>().Collection
                 .Function("GetRequestProjectGroups")
@@ -40,25 +30,46 @@ public static class EdmModelBuilder
             .ReturnsCollectionFromEntitySet<ProjectGroupdetail>("ProjectGroupDetail")
             .Parameter<Guid>("ProjectId");
 
-        
-        builder.EntitySet<VwLocations>("VwLocations");
-        builder.EntitySet<PromotionCodes>("PromotionCodes");
-
-/*
-        builder.EntityType<Request>().Collection
-                .Function("AddNew")
-                .ReturnsCollectionFromEntitySet<Request>("Request");
-
-        builder.EntityType<Country>().Collection
-               .Function("AddNew")
-               .ReturnsCollectionFromEntitySet<Country>("Countries");
-*/
-
-        EdmEntityContainer container = new EdmEntityContainer(builder.Namespace, builder.ContainerName);
-
-        EdmModel model = (EdmModel)builder.GetEdmModel();
-
-        return model;
-
+        return builder.GetEdmModel();
     }
+
+    public static void AddEntities(ODataConventionModelBuilder builder)
+    {
+        var contextType = typeof(DBContext);
+        var properties = contextType.GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(x => x.PropertyType.IsGenericType)
+            .ToArray();
+
+        var entitySetMethod = typeof(ODataConventionModelBuilder).GetMethod(nameof(ODataConventionModelBuilder.EntitySet));
+
+        var dbSetProperties = properties.Where(x => x.PropertyType.GetGenericTypeDefinition() == typeof(DbSet<>)).ToArray();
+        foreach (var property in dbSetProperties.OrderBy(x => x.Name))
+        {
+            var dbSetType = property.PropertyType.GetGenericArguments().FirstOrDefault();
+            var isKeyless = dbSetType.GetCustomAttributes(typeof(KeylessAttribute), false).Any();
+            if (isKeyless == false)
+            {
+                var entitySetMethodGeneric = entitySetMethod.MakeGenericMethod(dbSetType);
+                entitySetMethodGeneric?.Invoke(builder, new[] { dbSetType.Name });
+                
+            }
+            /* key özelliği olmayanlar
+            else
+            {
+                //var keyProperty = DetermineKeyProperty(dbSetType);
+                var tt = dbSetType.GetProperty("Id");
+                if (tt != null )
+                
+                {
+                        
+                    EntityTypeConfiguration entityType = builder.AddEntityType(dbSetType);
+                    entityType.HasKey(tt);
+                    builder.AddEntitySet(dbSetType.Name, entityType);
+                }
+            }
+            */
+        }
+    }
+
+    
 }

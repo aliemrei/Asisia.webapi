@@ -23,9 +23,8 @@ using Microsoft.AspNetCore.OData.Routing.Attributes;
 namespace Asisia.webapi.Controllers;
 
 [AuthorizeOData("", "")]
-[Route("v2/{controller}")]
-[BaseControllerNameConvention] 
-//[ActionExecutingContextChecker()]
+//[Route("v2/{controller}")] // Disabled because it uses AddRouteComponents in Program.cs
+//[BaseControllerNameConvention] //To generate automaticly non exists controllers. Disabled because no need it. 
 public class BaseController<TEntity, TService> : ODataController, IBaseController<TEntity, TService>
     where TEntity : EntityBase, new()
     where TService : IGenericService<TEntity>

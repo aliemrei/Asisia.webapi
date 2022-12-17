@@ -2,7 +2,7 @@ using Asisia.webapi.Repositories;
 using Microsoft.AspNetCore.OData;
 using Microsoft.EntityFrameworkCore;
 using Asisia.webapi.Models;
- 
+
 using Microsoft.OData.Edm;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Net;
@@ -16,6 +16,11 @@ using Microsoft.OData;
 using Asisia.webapi.Services;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 
+using System.Linq;
+
+
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
@@ -23,12 +28,13 @@ builder.Services.AddCors(options =>
                 options.AddPolicy(
                     "AllowAllOrigins",
                     builder => builder
-                                   
+
                                     .AllowAnyHeader()
                                     .AllowAnyMethod()
                                     .AllowCredentials()
 
-                                    .SetIsOriginAllowed(origin => {
+                                    .SetIsOriginAllowed(origin =>
+                                    {
                                         return true;
                                     }));
 
@@ -41,130 +47,43 @@ builder.Services.AddCors(options =>
 builder.Services.AddDbContext<Asisia.webapi.Models.Db.DBContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    
+
     options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
 
 }, Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped);
 
-/*
-builder.Services.AddDbContextFactory<Asisia.webapi.Models.DBContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-
-}, ServiceLifetime.Scoped);
-
- */
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddScoped<IGenericRepository<Request>, RequestRepository>(); 
-builder.Services.AddScoped<IGenericService<Request>, RequestService>(serviceProvider => 
-      new RequestService(serviceProvider.GetRequiredService<IGenericRepository<Request>>()));
+builder.Services.RegisterODataServices();
 
-
-builder.Services.AddScoped<IGenericRepository<RequestDetail>, RequestDetailRepository>();
-builder.Services.AddScoped<IGenericService<RequestDetail>, RequestDetailService>(serviceProvider => 
-      new RequestDetailService(serviceProvider.GetRequiredService<IGenericRepository<RequestDetail>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Person>, PersonRepository>();
-builder.Services.AddScoped<IGenericService<Person>, ServiceBase<Person>>(serviceProvider => 
-      new ServiceBase<Person>(serviceProvider.GetRequiredService<IGenericRepository<Person>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<RequestClients>, RequestClientRepository>();
-builder.Services.AddScoped<IGenericService<RequestClients>, ServiceBase<RequestClients>>(serviceProvider => 
-      new ServiceBase<RequestClients>(serviceProvider.GetRequiredService<IGenericRepository<RequestClients>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<ProjectGroup>, ProjectGroupRepository>();
-builder.Services.AddScoped<IGenericService<ProjectGroup>, ServiceBase<ProjectGroup>>(serviceProvider => 
-      new ServiceBase<ProjectGroup>(serviceProvider.GetRequiredService<IGenericRepository<ProjectGroup>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<ProjectGroupdetail>, ProjectGroupDetailRepository>();
-builder.Services.AddScoped<IGenericService<ProjectGroupdetail>, ProjectGroupdetailService>(serviceProvider => 
-      new ProjectGroupdetailService(serviceProvider.GetRequiredService<IGenericRepository<ProjectGroupdetail>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<UserProjectDetails>,  RepositoryBase<UserProjectDetails>>();
-builder.Services.AddScoped<IGenericService<Country>, ServiceBase<Country>>(serviceProvider => 
-      new ServiceBase<Country>(serviceProvider.GetRequiredService<IGenericRepository<Country>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Country>, CountyRepository>();
-builder.Services.AddScoped<IGenericService<Country>, ServiceBase<Country>>(serviceProvider => 
-      new ServiceBase<Country>(serviceProvider.GetRequiredService<IGenericRepository<Country>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Resources>, ResourcesRepository>();
-builder.Services.AddScoped<IGenericService<Resources>, ServiceBase<Resources>>(serviceProvider => 
-      new ServiceBase<Resources>(serviceProvider.GetRequiredService<IGenericRepository<Resources>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Curcode>, CurrenciesRepository>();
-builder.Services.AddScoped<IGenericService<Curcode>, ServiceBase<Curcode>>(serviceProvider => 
-      new ServiceBase<Curcode>(serviceProvider.GetRequiredService<IGenericRepository<Curcode>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<VwLocations>, VwLocationsRepository>();
-builder.Services.AddScoped<IGenericService<VwLocations>, ServiceBase<VwLocations>>(serviceProvider => 
-      new ServiceBase<VwLocations>(serviceProvider.GetRequiredService<IGenericRepository<VwLocations>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<PromotionCodes>, RepositoryBase<PromotionCodes>>();
-builder.Services.AddScoped<IGenericService<PromotionCodes>, ServiceBase<PromotionCodes>>(serviceProvider => 
-      new ServiceBase<PromotionCodes>(serviceProvider.GetRequiredService<IGenericRepository<PromotionCodes>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Users>, RepositoryBase<Users>>();
-builder.Services.AddScoped<IGenericService<Users>, ServiceBase<Users>>(serviceProvider => 
-      new ServiceBase<Users>(serviceProvider.GetRequiredService<IGenericRepository<Users>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<UserProjectDetails>, RepositoryBase<UserProjectDetails>>();
-builder.Services.AddScoped<IGenericService<UserProjectDetails>, ServiceBase<UserProjectDetails>>(serviceProvider => 
-      new ServiceBase<UserProjectDetails>(serviceProvider.GetRequiredService<IGenericRepository<UserProjectDetails>>()));
-
-
-builder.Services.AddScoped<IGenericRepository<Agency>, RepositoryBase<Agency>>();
-builder.Services.AddScoped<IGenericService<Agency>, ServiceBase<Agency>>(serviceProvider => 
-      new ServiceBase<Agency>(serviceProvider.GetRequiredService<IGenericRepository<Agency>>()));
-
-
- 
-
- 
 builder.Services.AddControllers()
-    .ConfigureApplicationPartManager(manager => {
-        manager.FeatureProviders.Add(new BaseControllerFeatureProvider());
+    .ConfigureApplicationPartManager(manager =>
+    {
+        //manager.FeatureProviders.Add(new BaseControllerFeatureProvider()); //To auto generate non-exitst odata controllers 
     })
-    .AddJsonOptions(options => {
-            
-            options.JsonSerializerOptions.PropertyNamingPolicy =  null; // to don't change property names lowercase
-            //options.JsonSerializerOptions.DictionaryKeyPolicy = null;
-            //options.JsonSerializerOptions.WriteIndented = true;
-             
-            //options.JsonSerializerOptions.MaxDepth = 5;
+    .AddJsonOptions(options =>
+    {
+
+        options.JsonSerializerOptions.PropertyNamingPolicy = null; // to don't change property names lowercase
+        //options.JsonSerializerOptions.DictionaryKeyPolicy = null;
+        //options.JsonSerializerOptions.WriteIndented = true;
+        //options.JsonSerializerOptions.MaxDepth = 5;
     })
     .AddOData(opt => opt.Count().Filter().Expand().Select().OrderBy().SetMaxTop(1000).SkipToken().EnableQueryFeatures(null)
-       
+
+
         .AddRouteComponents("v2", EdmModelBuilder.GetEdmModelV1(), action =>
                 {
-                    
+
                     // To convert Guid.Empty values to "" (empty string);
-                    action.AddSingleton( typeof(ODataPayloadValueConverter), pvc => new CustomPayloadValueConverter());
+                    action.AddSingleton(typeof(ODataPayloadValueConverter), pvc => new CustomPayloadValueConverter());
                     // To handle gets model datas
                     //action.AddSingleton<IODataDeserializerProvider, CustomResourceDeserializerProvider>();
                 })
-         
-   
-    );
 
-   
-    
- 
+
+    );
 
 var key = Encoding.ASCII.GetBytes(Settings.Secret);
 builder.Services.AddAuthentication(x =>
@@ -185,8 +104,8 @@ builder.Services.AddAuthentication(x =>
     };
 
 });
- 
- 
+
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -203,38 +122,33 @@ if (app.Environment.IsDevelopment())
     });
 }
 
- 
-    
-
 //Convert errors a json object and change error's content if the environment state is development
 
 app.UseExceptionHandler(appBuilder =>
   {
-    appBuilder.Use(async (context, next) =>
-    {
-      var error = context.Features[typeof(IExceptionHandlerFeature)] as IExceptionHandlerFeature;
-      if (error?.Error != null)
+      appBuilder.Use(async (context, next) =>
       {
-        if (error.Error is DbUpdateException || error.Error?.InnerException is DbUpdateException)
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-             
-            //context.Response.
-        }
-        else 
-        {
-            context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
-        }
-        
-        context.Response.ContentType = "application/json";
+          var error = context.Features[typeof(IExceptionHandlerFeature)] as IExceptionHandlerFeature;
+          if (error?.Error != null)
+          {
+              if (error.Error is DbUpdateException || error.Error?.InnerException is DbUpdateException)
+              {
+                  context.Response.StatusCode = (int)HttpStatusCode.BadRequest;
+              }
+              else
+              {
+                  context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+              }
 
-        var response = error.Error.CreateODataError(app.Environment.IsDevelopment());
-        await context.Response.WriteAsync(JsonConvert.SerializeObject(response));
-      }
+              context.Response.ContentType = "application/json";
 
-      // when no error, do next.
-      else await next();
-    });
+              var response = error.Error.CreateODataError(app.Environment.IsDevelopment());
+              await context.Response.WriteAsync(JsonConvert.SerializeObject(response));
+          }
+
+          // when no error, do next.
+          else await next();
+      });
   });
 
 
@@ -245,7 +159,7 @@ app.UseAuthorization();
 app.UseAuthentication();
 
 app.UseCors("AllowAllOrigins");
- 
+
 app.MapControllers();
 
 app.Run();
