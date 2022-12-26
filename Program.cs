@@ -44,14 +44,7 @@ builder.Services.AddCors(options =>
 
 // Add services to the container.
 
-builder.Services.AddDbContext<Asisia.webapi.Models.Db.DBContext>(options =>
-{
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-
-    options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
-
-}, Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped);
-
+builder.RegisterDBContexts();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -170,4 +163,6 @@ app.Run();
 don't forget to change  <!--<Nullable>enable</Nullable>--> to  <Nullable>enable</Nullable> in the .csproj file before execute the code
 
 dotnet ef dbcontext scaffold "Data Source=192.168.1.121;initial catalog=ASISIA_DEMO;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer -o Models/Db -c DBContext -d -f  --no-pluralize --data-annotations
+dotnet ef dbcontext scaffold "Data Source=192.168.1.121;initial catalog=ASISIA_DESIGN;user id=asisia;password=a.e.i1980;persist security info=True;MultipleActiveResultSets=True;App=asisia.webapi.design;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer -o Models/DbDesign -c DBDesignContext -d -f  --no-pluralize --data-annotations
+
 */

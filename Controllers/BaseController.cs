@@ -76,6 +76,7 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
 
     [EnableQuery]
     [HttpGet("{key}")]
+   
     public virtual SingleResult<TEntity> Get([FromODataUri] Guid key)
     {
 
@@ -94,17 +95,9 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
     public virtual IActionResult Patch(ODataQueryOptions<TEntity> options,
         [FromODataUri] Guid key, [FromBody] System.Text.Json.JsonElement data)
     {
-        var delta = new Delta<TEntity>(typeof(TEntity));
+        var entity = data.ToObject<TEntity>();
 
-        var changedData = data.ToObject<TEntity>();
-
-        foreach (var prop in changedData.GetType().GetProperties())
-        {
-            if (data.TryGetProperty(prop.Name, out var value))
-            {
-                delta.TrySetPropertyValue(prop.Name, prop.GetValue(changedData));
-            }
-        }
+        var delta = _service.GetDelta(data);
 
         if (key == Guid.Empty)
         {
@@ -130,13 +123,21 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
 
             delta.Patch(currentData);
 
-            _service.Update(key, currentData);
-
             try
             {
+                _service.Update(key, currentData, data);
+
                 _service.Save();
+
+                var result = options.ApplyTo(_service.GetAll().Where(b => EF.Property<Guid>(b, "Id") == key), new ODataQuerySettings
+                {
+                    HandleNullPropagation = HandleNullPropagationOption.True
+                })
+                as IQueryable<dynamic>;
+
+                return Ok(result.AsQueryable().FirstOrDefault());
             }
-            catch (DbUpdateConcurrencyException)
+            catch //(DbUpdateConcurrencyException)
             {
                 throw;
             }
@@ -146,24 +147,58 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
     }
 
     [HttpPost]
-    public virtual IActionResult Post([FromBody] TEntity? data)
+    public virtual IActionResult Post(ODataQueryOptions<TEntity> options, [FromBody] System.Text.Json.JsonElement data)
     {
+        try
+        {
+            var entity = data.ToObject<TEntity>();
+
+            if (!ModelState.IsValid)
+            {
+                return ValidationFailed();
+            }
+
+            _service.ValidateForInsert(entity);
+
+            _service.Insert(entity, data);
+
+            _service.Save();
+
+            var gg = data.ToObject<Request>();
+
+            var result = options.ApplyTo(_service.GetAll().Where(b => EF.Property<Guid>(b, "Id") == gg.Id), new ODataQuerySettings
+                {
+                    HandleNullPropagation = HandleNullPropagationOption.True
+                })
+                as IQueryable<dynamic>;
+
+            return Ok(result.AsQueryable().FirstOrDefault());    
+        }
+        catch //(DbUpdateConcurrencyException)
+        {
+            throw;
+        }
+
+       
+
+
+        /*
         if (!ModelState.IsValid)
         {
             return ValidationFailed();
         }
 
-        if (data != null)
+        if (entity != null)
         {
             TEntity result = null;
 
             var prop = typeof(TEntity).GetProperty("Id");
-            Guid _id = (Guid)prop.GetValue(data);
+            Guid _id = (Guid)prop.GetValue(entity);
 
             var IsExists = _service.IsExists(_id);
 
             if (IsExists == false)
-                result = _service.Insert(data);
+                result = _service.Insert(entity);
 
             try
             {
@@ -174,8 +209,9 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
                 throw;
             }
 
-            return Ok(result ?? data);
+            return Ok(result ?? entity);
         }
+        */
 
         return BadRequest("Null body!");
     }
@@ -184,16 +220,16 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
     [EnableQuery(AllowedQueryOptions = AllowedQueryOptions.All)]
     public virtual IActionResult Put([FromODataUri] Guid key, TEntity data)
     {
-        var prop = typeof(TEntity).GetProperty("ID");
+        var prop = typeof(TEntity).GetProperty("Id");
 
         if (!Guid.TryParse(prop.GetValue(data).ToString(), out var _id) || _id != key)
         {
             return BadRequest();
         }
 
-        _service.Update(key, data);
+        //_service.Update(key, data, null);
 
-        _service.Save();
+        //_service.Save();
 
         return NoContent();
     }
@@ -217,14 +253,8 @@ public class BaseController<TEntity, TService> : ODataController, IBaseControlle
     [EnableQuery]
     protected virtual IQueryable<TEntity> AddNew()
     {
-        List<TEntity> result = new List<TEntity>();
+       Request.GetWriterSettings().Validations = Microsoft.OData.ValidationKinds.None;
 
-        Request.GetWriterSettings().Validations = Microsoft.OData.ValidationKinds.None;
-
-        var obj = _service.Create();
-
-        result.Add(obj);
-
-        return result.AsQueryable();
+       return _service.AddNew();
     }
 }

@@ -19,14 +19,13 @@ public sealed class RequestController : BaseController<Request, IGenericService<
     private readonly IGenericService<Users> _usersService;
 
     public RequestController(ILogger<Request> logger,  
-        IGenericService<Request> service,
-        IGenericService<Person> personService,
-        IGenericService<Users> usersService) : base(logger, service)
+        IGenericService<Request> service) : base(logger, service)
     {
-        this._personService = personService;
-        this._usersService = usersService;
+        //this._personService = personService;
+        //this._usersService = usersService;
     }    
 
+/*
     public override IActionResult Patch(ODataQueryOptions<Request> options, 
         [FromODataUri] Guid key, [FromBody] System.Text.Json.JsonElement data)
     {
@@ -84,15 +83,17 @@ public sealed class RequestController : BaseController<Request, IGenericService<
     }
  
    //[ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-    public override IActionResult Post([FromBody] Request data)
+    public override IActionResult Post([FromBody] System.Text.Json.JsonElement data)
     {
-        if (data != null)
+        var entity = data.ToObject<Request>();
+
+        if (entity != null)
         {
-            data.AdduserNavigation = null;
+            entity.AdduserNavigation = null;
 
             ModelState.Clear();
 
-            TryValidateModel(data); 
+            TryValidateModel(entity); 
         }
         
         if (!ModelState.IsValid)
@@ -100,9 +101,9 @@ public sealed class RequestController : BaseController<Request, IGenericService<
             return ValidationFailed();
         }
 
-        if (data != null)
+        if (entity != null)
         {
-            if (!TryValidateModel(data.Person, nameof(Person)))
+            if (!TryValidateModel(entity.Person, nameof(Person)))
             {
                 if (!ModelState.IsValid)
                 {
@@ -111,12 +112,12 @@ public sealed class RequestController : BaseController<Request, IGenericService<
             }
             
             var prop = typeof(Request).GetProperty("Id");
-            Guid _id = (Guid)prop.GetValue(data);
+            Guid _id = (Guid)prop.GetValue(entity);
 
-            var result = base._service.Update(_id, data);
+            var result = base._service.Update(_id, entity);
 
             if (result == null)
-                base._service.Insert(data);
+                base._service.Insert(entity);
     
             try
             {
@@ -127,12 +128,13 @@ public sealed class RequestController : BaseController<Request, IGenericService<
                 throw ex;
             }
 
-            return Ok(result ?? data);
+            return Ok(result ?? entity);
         }
 
         return BadRequest("Null body!");
     }
-
+*/
+/*
     protected override IQueryable<Request> AddNew()
     {
         List<Request> result = new List<Request>();
@@ -157,7 +159,6 @@ public sealed class RequestController : BaseController<Request, IGenericService<
 
         return result.AsQueryable();
     }
-
-    
+*/  
 }
  

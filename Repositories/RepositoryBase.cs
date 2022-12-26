@@ -34,6 +34,13 @@ namespace Asisia.webapi.Repositories
 
             return obj;
         }
+        public virtual TEntity? Attach(TEntity obj)
+        {
+            _dbSet.Attach(obj);
+
+            return obj;
+        }
+
         public virtual TEntity? Update(object id, TEntity changedData)
         {
             var currentData = _dbSet.Find(id);
